@@ -25,6 +25,13 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   first_unassembled_index_ = first_unpopped_index_ + buffered_in_byte_stream;
   first_unacceptable_index_ = first_unassembled_index_ + available_capacity;
 
+  // close after push last substring
+  if (is_last_substring) {
+    // output_.writer().close();
+    eof_index_ = last_index;
+    eof_received_ = true;
+  }
+
   //case0: stream index is too big
   if ( first_index > first_unacceptable_index_) return;
 
@@ -65,12 +72,6 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   place_string_efficiently(unassembled_bytes, data, start_index);
   }
 
-  // close after push last substring
-  if (is_last_substring) {
-    // output_.writer().close();
-    eof_index_ = last_index;
-    eof_received_ = true;
-  }
 }
 
 void place_string_efficiently(

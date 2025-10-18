@@ -26,6 +26,8 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   //case0: stream index is too big
   if ( first_index > first_unacceptable_index_) return;
 
+  bool pushed = false;
+
   // case1: all data is legal
   if ( first_index == first_unassembled_index_ ) {
     // writer.push( data );
@@ -43,18 +45,22 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
       unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
     }
     writer.push(data);
+    pushed = true;
   }
 
   // case2: data is longer than popped
   if ( first_index < first_unassembled_index_ ){
     writer.push( data.substr(first_unassembled_index_ - first_index ));
+    pushed = true;
   }
 
   // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
   uint64_t start_index = first_index - first_unassembled_index_;
   if (unassembled_bytes.empty()) unassembled_bytes.resize(available_capacity, '\0'); 
+  if (!pushed){
   place_string_efficiently(unassembled_bytes, data, start_index);
-
+  }
+  
   // close after push last substring
   if (is_last_substring) {
     output_.writer().close();

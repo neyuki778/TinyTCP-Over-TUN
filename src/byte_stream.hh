@@ -25,6 +25,12 @@ protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
   uint64_t capacity_;
   bool error_ {};
+  // basic para cloud be used
+  std::string buffer_;
+  bool closed_ { false };
+  // hinted by func
+  uint64_t total_pushed_;
+  uint64_t total_poped_;
 };
 
 class Writer : public ByteStream
@@ -41,8 +47,8 @@ public:
 class Reader : public ByteStream
 {
 public:
-  std::string_view peek() const; // Peek at the next bytes in the buffer
-  void pop( uint64_t len );      // Remove `len` bytes from the buffer
+  std::string_view peek() const; // Peek at the next bytes in the buffer -- ideally as many as possible.
+  void pop( uint64_t len );      // Remove `len` bytes from the buffer.
 
   bool is_finished() const;        // Is the stream finished (closed and fully popped)?
   uint64_t bytes_buffered() const; // Number of bytes currently buffered (pushed and not popped)

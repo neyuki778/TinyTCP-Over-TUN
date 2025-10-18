@@ -7,11 +7,30 @@
 
 using namespace std;
 
+namespace {
 void get_URL( const string& host, const string& path )
 {
-  cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
-  cerr << "Warning: get_URL() has not been implemented yet.\n";
+  // debug( "Function called: get_URL( \"{}\", \"{}\" )", host, path );
+  // debug( "get_URL() function not yet implemented" );
+  // 1 connect host
+  // 2 send get request
+  // 3 read recv and print it
+  TCPSocket socket;
+  socket.connect( Address( host, "http" ) );
+  string message;
+  message += "GET " + path + " HTTP/1.1\r\n";
+  message += "Host: " + host + "\r\n";
+  message += "Connection: close\r\n";
+  message += "\r\n";
+  socket.write( message );
+  string response;
+  while ( !socket.eof() ) {
+    socket.read( response );
+    cout << response;
+  }
+  // socket.close();
 }
+} // namespace
 
 int main( int argc, char* argv[] )
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "byte_stream.hh"
+#include<vector>
 
 class Reassembler
 {
@@ -43,4 +44,9 @@ public:
 
 private:
   ByteStream output_;
+  uint64_t first_unpopped_index_;
+  uint64_t first_unassembled_index_;
+  uint64_t first_unacceptable_index_;
+
+  vector<char> unassembled_bytes;
 };

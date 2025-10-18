@@ -73,7 +73,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   uint64_t start_index = first_index - first_unassembled_index_;
   if (unassembled_bytes.empty()) unassembled_bytes.resize(available_capacity, '\0'); 
   // if (!pushed){
-  place_string_efficiently(unassembled_bytes, data, start_index);
+  place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);
   // }
 
 }

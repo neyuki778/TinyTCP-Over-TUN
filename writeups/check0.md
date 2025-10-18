@@ -13,15 +13,31 @@ This lab took me about [n] hours to do. I [did/did not] attend the lab session.
 
 My secret code from section 2.1 was: [code here]
 
-I was surprised by or edified to learn that: [describe]
+I was surprised by or edified to learn that: 
 
-Describe ByteStream implementation. [Describe data structures and
-approach taken. Describe alternative designs considered or tested.
-Describe benefits and weaknesses of your design compared with
-alternatives -- perhaps in terms of simplicity/complexity, risk of
-bugs, asymptotic performance, empirical performance, required
-implementation time and difficulty, and other factors. Include any
-measurements if applicable.]
+1. how a tcp-socket connect to a server
+2. molden cpp standard and new characteristics like virtual func
+3. learn more about tcp protocol
+4. improved programming  ability  
+
+Implementation Challenges:
+
+1. how to begin without a specific example, that i have to go deep into documentation and the existing public interfaces, especially at the beginning
+2. a common way to solve programing problem: clarify goal and fix it step by step
+
+Remaining Bugs:
+
+performance:
+  ByteStream throughput (pop length 4096): 10.69 Gbit/s
+  ByteStream throughput (pop length 128):   2.37 Gbit/s
+  ByteStream throughput (pop length 32):    0.66 Gbit/s
+it does not perform well ,that i can do it better.
+and i do not completely understand how peek func works
+
+- If applicable: I received help from a former student in this class,
+  another expert, or a chatbot or other AI system (e.g. ChatGPT,
+  Gemini, Claude, etc.), with the following questions or prompts:
+  [please list questions/prompts]
 
 - Optional: I had unexpected difficulty with: [describe]
 

@@ -12,6 +12,8 @@ public:
       first_unpopped_index_( 0 ),
       first_unassembled_index_( 0 ),
       first_unacceptable_index_( 0 ),
+      eof_index_( 0 ),
+      eof_received_( false ),
       unassembled_bytes()
   {}
   /*
@@ -52,6 +54,8 @@ private:
   uint64_t first_unpopped_index_;
   uint64_t first_unassembled_index_;
   uint64_t first_unacceptable_index_;
+  uint64_t eof_index_;
+  bool eof_received_;
 
   std::vector<char> unassembled_bytes;
 };

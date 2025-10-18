@@ -8,6 +8,8 @@ using namespace std;
 
 void place_string_efficiently(std::vector<char>& container, std::string_view data, uint64_t start_index);
 
+void try_close(bool recv, uint64_t idx, Writer& writer);
+
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
   // debug( "unimplemented insert({}, {}, {}) called", first_index, data, is_last_substring );
@@ -46,12 +48,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     }
     writer.push(data);
     pushed = true;
+    try_close(eof_received_, eof_index_, writer);
   }
 
   // case2: data is longer than popped
   if ( first_index < first_unassembled_index_ ){
     writer.push( data.substr(first_unassembled_index_ - first_index ));
     pushed = true;
+    try_close(eof_received_, eof_index_, writer);
   }
 
   // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
@@ -60,10 +64,12 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   if (!pushed){
   place_string_efficiently(unassembled_bytes, data, start_index);
   }
-  
+
   // close after push last substring
   if (is_last_substring) {
-    output_.writer().close();
+    // output_.writer().close();
+    eof_index_ = last_index;
+    eof_received_ = true;
   }
 }
 
@@ -86,6 +92,12 @@ void place_string_efficiently(
         actual_len,               // 复制的长度
         &container[start_index] // 目标地址的起始指针
     );
+}
+
+void try_close(bool recv, uint64_t idx, Writer& writer){
+  if (recv and idx == writer.bytes_pushed()){
+    writer.close();
+  }
 }
 
 // How many bytes are stored in the Reassembler itself?

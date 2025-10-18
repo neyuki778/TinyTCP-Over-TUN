@@ -27,10 +27,10 @@ protected:
   bool error_ {};
   // basic para cloud be used
   std::string buffer_;
-  bool closed_;
   // hinted by func
   uint64_t total_pushed_;
   uint64_t total_poped_;
+  bool closed_;
 };
 
 class Writer : public ByteStream

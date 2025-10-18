@@ -2,6 +2,7 @@
 #include "debug.hh"
 #include<string_view>
 #include<vector>
+#include<algorithm>
 
 using namespace std;
 
@@ -30,7 +31,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     if (!unassembled_bytes.empty()){
       uint64_t first_index_in_unassembled_bytes = last_index - first_unassembled_index_;
       auto it = first_index_in_unassembled_bytes;
-      for ( it; it < unassembled_bytes.size(); it++){
+      for (; it < unassembled_bytes.size(); it++){
         if (unassembled_bytes[it] != '\0'){
           data += unassembled_bytes[it];
         }else{
@@ -64,8 +65,6 @@ void place_string_efficiently(
     uint64_t start_index)
 {
     uint64_t data_len = data.length();
-    uint64_t end_index = start_index + data_len;
-
     if (start_index >= container.size()) {
         return;
     }

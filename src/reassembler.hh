@@ -48,5 +48,5 @@ private:
   uint64_t first_unassembled_index_;
   uint64_t first_unacceptable_index_;
 
-  vector<char> unassembled_bytes;
+  std::vector<char> unassembled_bytes;
 };

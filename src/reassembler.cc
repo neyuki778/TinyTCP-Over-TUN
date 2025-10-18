@@ -86,6 +86,9 @@ void place_string_efficiently(
 // This function is for testing only; don't add extra state to support it.
 uint64_t Reassembler::count_bytes_pending() const
 {
-  debug( "unimplemented count_bytes_pending() called" );
-  return {};
+  uint64_t cnt = 0;
+  for (char c : unassembled_bytes) {
+    if (c != '\0') ++cnt;
+  }
+  return cnt;
 }

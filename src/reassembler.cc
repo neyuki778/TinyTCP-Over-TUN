@@ -6,6 +6,8 @@
 
 using namespace std;
 
+void place_string_efficiently(std::vector<char>& container, std::string_view data, uint64_t start_index);
+
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
   // debug( "unimplemented insert({}, {}, {}) called", first_index, data, is_last_substring );

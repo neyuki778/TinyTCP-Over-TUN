@@ -7,8 +7,13 @@ class Reassembler
 {
 public:
   // Construct Reassembler to write into given ByteStream.
-  explicit Reassembler( ByteStream&& output ) : output_( std::move( output ) ) {}
-
+  explicit Reassembler( ByteStream&& output )
+    : output_( std::move( output ) ),
+      first_unpopped_index_( 0 ),
+      first_unassembled_index_( 0 ),
+      first_unacceptable_index_( 0 ),
+      unassembled_bytes()
+  {}
   /*
    * Insert a new substring to be reassembled into a ByteStream.
    *   `first_index`: the index of the first byte of the substring

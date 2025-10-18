@@ -6,7 +6,10 @@
 
 using namespace std;
 
-void place_string_efficiently(std::vector<char>& container, std::string_view data, uint64_t start_index);
+void place_string_efficiently(std::vector<char>& container,
+                              std::vector<bool>& present,
+                              std::string_view data,
+                              uint64_t start_index);
 
 void try_close(bool recv, uint64_t idx, Writer& writer);
 
@@ -45,13 +48,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
       uint64_t first_index_in_unassembled_bytes = last_index - first_unassembled_index_;
       auto it = first_index_in_unassembled_bytes;
       for (; it < unassembled_bytes.size(); it++){
-        if (unassembled_bytes[it] != '\0'){
+        if (unassembled_present[it]){
           data += unassembled_bytes[it];
         }else{
           break;
         }
       }
       unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
+      unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
     }
     writer.push(data);
     pushed = true;
@@ -68,31 +72,32 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
   uint64_t start_index = first_index - first_unassembled_index_;
   if (unassembled_bytes.empty()) unassembled_bytes.resize(available_capacity, '\0'); 
-  if (!pushed){
+  // if (!pushed){
   place_string_efficiently(unassembled_bytes, data, start_index);
-  }
+  // }
 
 }
 
 void place_string_efficiently(
-    vector<char>& container, 
-    std::string_view data, 
+    vector<char>& container,
+    vector<bool>& present,
+    std::string_view data,
     uint64_t start_index)
 {
     uint64_t data_len = data.length();
     if (start_index >= container.size()) {
         return;
     }
-    
+
     uint64_t remaining_capacity = container.size() - start_index;
     uint64_t actual_len = std::min(data_len, remaining_capacity);
     if (actual_len == 0) return;
 
-    std::copy_n(
-        data.data(),            // 源数据的起始指针
-        actual_len,               // 复制的长度
-        &container[start_index] // 目标地址的起始指针
-    );
+    // copy bytes (including zero bytes) and mark presence
+    for (uint64_t i = 0; i < actual_len; ++i) {
+        container[start_index + i] = data[i];
+        present[start_index + i] = true;
+    }
 }
 
 void try_close(bool recv, uint64_t idx, Writer& writer){

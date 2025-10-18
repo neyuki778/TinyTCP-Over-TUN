@@ -14,7 +14,8 @@ public:
       first_unacceptable_index_( 0 ),
       eof_index_( 0 ),
       eof_received_( false ),
-      unassembled_bytes()
+      unassembled_bytes(),
+      unassembled_present()
   {}
   /*
    * Insert a new substring to be reassembled into a ByteStream.
@@ -58,4 +59,5 @@ private:
   bool eof_received_;
 
   std::vector<char> unassembled_bytes;
+  std::vector<bool> unassembled_present;
 };

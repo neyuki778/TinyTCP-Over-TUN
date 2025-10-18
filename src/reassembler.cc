@@ -11,8 +11,8 @@ void place_string_efficiently(std::vector<char>& container, std::string_view dat
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
   // debug( "unimplemented insert({}, {}, {}) called", first_index, data, is_last_substring );
-  Writer writer = output_.writer();
-  Reader reader = output_.reader();
+  Writer& writer = output_.writer();
+  Reader& reader = output_.reader();
 
   uint64_t buffered_in_byte_stream = reader.bytes_buffered(); 
   uint64_t popped_bytes_index = reader.bytes_popped();

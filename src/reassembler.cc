@@ -19,7 +19,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   uint64_t available_capacity = writer.available_capacity();
   uint64_t last_index = first_index + data.length();
 
-  first_unpopped_index_ = popped_bytes_index - 1;
+  first_unpopped_index_ = popped_bytes_index;
   first_unassembled_index_ = first_unpopped_index_ + buffered_in_byte_stream;
   first_unacceptable_index_ = first_unassembled_index_ + available_capacity;
 

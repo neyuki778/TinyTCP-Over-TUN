@@ -71,10 +71,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
 
   // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
   uint64_t start_index = first_index - first_unassembled_index_;
-  if (unassembled_bytes.empty()) unassembled_bytes.resize(available_capacity, '\0'); 
-  // if (!pushed){
-  place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);
-  // }
+  if (unassembled_bytes.empty()) {
+    unassembled_bytes.resize(available_capacity);
+    unassembled_present.assign(available_capacity, false);
+  }
+  // only store when the data lies beyond the current assembled prefix
+  if (first_index > first_unassembled_index_) {
+    place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);
+  }
 
 }
 
@@ -111,8 +115,8 @@ void try_close(bool recv, uint64_t idx, Writer& writer){
 uint64_t Reassembler::count_bytes_pending() const
 {
   uint64_t cnt = 0;
-  for (char c : unassembled_bytes) {
-    if (c != '\0') ++cnt;
+  for (bool b : unassembled_present) {
+    if (b) ++cnt;
   }
   return cnt;
 }

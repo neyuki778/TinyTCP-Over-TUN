@@ -3,3 +3,6 @@
 /.vscode
 *.swp
 /.cache
+/labs
+*.pdf
+*.DS_Store

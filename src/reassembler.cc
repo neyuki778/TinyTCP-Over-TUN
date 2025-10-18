@@ -38,7 +38,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   //case0: stream index is too big
   if ( first_index > first_unacceptable_index_) return;
 
-  bool pushed = false;
+  // bool pushed = false;
 
   // case1: all data is legal
   if ( first_index == first_unassembled_index_ ) {
@@ -58,14 +58,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
       unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
     }
     writer.push(data);
-    pushed = true;
+    // pushed = true;
     try_close(eof_received_, eof_index_, writer);
   }
 
   // case2: data is longer than popped
   if ( first_index < first_unassembled_index_ ){
     writer.push( data.substr(first_unassembled_index_ - first_index ));
-    pushed = true;
+    // pushed = true;
     try_close(eof_received_, eof_index_, writer);
   }
 

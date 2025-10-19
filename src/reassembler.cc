@@ -45,11 +45,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   //case0: stream index is too big
   if ( first_index > first_unacceptable_index_) return;
 
-  // init reassembler if need
+  // init reassembler if need or reshape
   if ( unassembled_bytes.empty() && available_capacity > 0 ) {
     unassembled_bytes.resize(available_capacity);
     unassembled_present.assign(available_capacity, false);
     // unassembled_base_index_ += first_unassembled_index_;
+  }else if (unassembled_bytes.size() != available_capacity && available_capacity > 0) {
+    unassembled_bytes.resize(available_capacity);
+    unassembled_present.resize(available_capacity, false);
   }
 
   // case1: all data is legal
@@ -143,13 +146,19 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
     }
   }
 
-  // 如果找到了连续数据，清理已使用的部分
   if (it > 0) {
-    unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
-    unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
-
     if (!additional_data.empty()) {
       writer.push(additional_data);
+    }
+    
+    unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
+    unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
+    
+    // point to pass test9
+    uint64_t new_capacity = writer.available_capacity();
+    if (unassembled_bytes.size() < new_capacity) {
+      unassembled_bytes.resize(new_capacity);
+      unassembled_present.resize(new_capacity, false);
     }
   }
 }

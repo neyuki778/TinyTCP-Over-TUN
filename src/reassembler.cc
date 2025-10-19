@@ -129,15 +129,22 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
                                Writer& writer,
                                Reader& reader)
 {
+
+  if (!data_to_push.empty()) {
+    writer.push(data_to_push);
+    data_to_push.clear();
+  }
+
   if (unassembled_bytes.empty()) {
     return;
   }
 
   // 从 unassembled_bytes 的起始位置开始查找连续的数据
   uint64_t it = 0;
+  string additional_data;
   for (; it < unassembled_bytes.size(); it++) {
     if (unassembled_present[it]) {
-      data_to_push += unassembled_bytes[it];
+      additional_data += unassembled_bytes[it];
     } else {
       break;
     }
@@ -148,13 +155,13 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
     unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
     unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
     update_first_unassembled_index_(first_unassembled_index_, reader);
+
+    if (!additional_data.empty()) {
+      writer.push(additional_data);
+    }
   }
 
-  // 推送所有累积的数据
-  if (!data_to_push.empty()) {
-    writer.push(data_to_push);
-    data_to_push.clear();
-  }
+  update_first_unassembled_index_(first_unassembled_index_, reader);
 }
 
 // How many bytes are stored in the Reassembler itself?

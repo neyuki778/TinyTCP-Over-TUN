@@ -25,10 +25,15 @@ implementation time and difficulty, and other factors. Include any
 measurements if applicable.]
 
 Implementation Challenges:
-[]
+1. figure out how an assembler works
+2. handle multiple cases with the help of debugger
 
 Remaining Bugs:
-[]
+1. writer should close when is_last_substring and eof received which are not mentioned in docs
+2. unify index as absolute index
+3. write helper functions to solve problems that are easily to debug
+4. debug step by step and carefully
+5. if trapped in a bug for a long time, try asking help from Internet or AI
 
 - Optional: I had unexpected difficulty with: [describe]
 

@@ -127,6 +127,12 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
     writer.push(data_to_push);
     first_unassembled_index += pushed_len;
     data_to_push.clear();
+
+    if ( pushed_len > 0 && !unassembled_bytes.empty() ) {
+      uint64_t num_to_erase = std::min( pushed_len, unassembled_bytes.size() );
+      unassembled_bytes.erase( unassembled_bytes.begin(), unassembled_bytes.begin() + num_to_erase );
+      unassembled_present.erase( unassembled_present.begin(), unassembled_present.begin() + num_to_erase );
+    }
   }
 
   if (unassembled_bytes.empty()) {

@@ -45,7 +45,8 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     // writer.push( data );
     // first_unpopped_index_ += data.length();
     if (!unassembled_bytes.empty()){
-      uint64_t first_index_in_unassembled_bytes = last_index - first_unassembled_index_;
+      // uint64_t first_index_in_unassembled_bytes = last_index - first_unassembled_index_;
+      uint64_t first_index_in_unassembled_bytes = last_index - unassembled_base_index_;
       auto it = first_index_in_unassembled_bytes;
       for (; it < unassembled_bytes.size(); it++){
         if (unassembled_present[it]){
@@ -71,12 +72,19 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   }
 
   // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
-  uint64_t start_index = first_index - first_unassembled_index_;
+  // uint64_t start_index = first_index - first_unassembled_index_;
+  // if (unassembled_bytes.empty()) {
+  //   unassembled_bytes.resize(available_capacity);
+  //   unassembled_present.assign(available_capacity, false);
+  //   unassembled_base_index_ += first_unassembled_index_;
+  // }
+  uint64_t start_index = 0;
   if (unassembled_bytes.empty()) {
     unassembled_bytes.resize(available_capacity);
     unassembled_present.assign(available_capacity, false);
-    unassembled_base_index_ += first_unassembled_index_;
+    unassembled_base_index_ = first_unassembled_index_;
   }
+  start_index = first_index - unassembled_base_index_;
   // only store when the data lies beyond the current assembled prefix
   if (first_index > first_unassembled_index_) {
     place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);

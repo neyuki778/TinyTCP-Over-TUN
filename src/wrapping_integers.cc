@@ -18,8 +18,8 @@ uint64_t Wrap32::unwrap( Wrap32 zero_point, uint64_t checkpoint ) const
   const uint64_t TWO_POW_32 = 1ULL << 32;
   const uint64_t TWO_POW_31 = 1ULL << 31;
 
-  if ( candidate > checkpoint and candidate - checkpoint > TWO_POW_31) return candidate - TWO_POW_32;
-  if ( candidate < checkpoint and checkpoint - candidate > TWO_POW_31) return candidate + TWO_POW_32;
+  if ( candidate > checkpoint and candidate - checkpoint > TWO_POW_31 and candidate > TWO_POW_32 ) return candidate - TWO_POW_32;
+  if ( candidate < checkpoint and checkpoint - candidate > TWO_POW_31 ) return candidate + TWO_POW_32;
 
   return candidate;
 }

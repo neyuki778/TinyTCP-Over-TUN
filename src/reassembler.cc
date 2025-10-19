@@ -85,7 +85,35 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     unassembled_base_index_ = first_unassembled_index_;
   }
   start_index = first_index - unassembled_base_index_;
-  // only store when the data lies beyond the current assembled prefix
+   // ...existing code...
+      if (!unassembled_bytes.empty()){
+        // 以 unassembled_base_index_ 为基准计算 buffer 中的起始位置，防止 underflow
+        size_t idx0 = 0;
+        if (last_index > unassembled_base_index_) {
+          idx0 = static_cast<size_t>(last_index - unassembled_base_index_);
+        } else {
+          idx0 = 0;
+        }
+        // 限定起始位置不超出当前 buffer 大小
+        if (idx0 > unassembled_bytes.size()) idx0 = unassembled_bytes.size();
+  
+        // 从 idx0 开始，拼接连续存在的字节
+        size_t it = idx0;
+        while (it < unassembled_bytes.size() && unassembled_present[it]) {
+          data.push_back(unassembled_bytes[it]);
+          it;
+        }
+  
+        // 要从前端删除的元素个数 = it （因为 buffer 的基准对应 unassembled_base_index_）
+        size_t erase_n = it;
+        if (erase_n > 0) {
+          if (erase_n > unassembled_bytes.size()) erase_n = unassembled_bytes.size();
+          unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + erase_n);
+          unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + erase_n);
+          unassembled_base_index_ += erase_n;
+        }
+      }
+   // ...existing code... // only store when the data lies beyond the current assembled prefix
   if (first_index > first_unassembled_index_) {
     place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);
   }

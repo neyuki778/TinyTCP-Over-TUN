@@ -18,7 +18,8 @@ void update_first_unassembled_index_(uint64_t& idx, Reader& reader);
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
                                std::vector<bool>& unassembled_present,
                                std::string& data_to_push,
-                               Writer& writer);
+                               Writer& writer,
+                               uint64_t& first_unassembled_index); 
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
@@ -60,7 +61,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   if ( first_index == first_unassembled_index_ ) {
     string data_to_push = data;
     try_push_assembled_bytes(unassembled_bytes, unassembled_present,
-                              data_to_push, writer);
+                              data_to_push, writer, first_unassembled_index_);
     try_close(eof_received_, eof_index_, writer);
     return;
   }
@@ -70,7 +71,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     uint64_t skip_len = first_unassembled_index_ - first_index;
     string data_to_push = data.substr(skip_len);
     try_push_assembled_bytes(unassembled_bytes, unassembled_present,
-                              data_to_push, writer);
+                              data_to_push, writer, first_unassembled_index_);
     try_close(eof_received_, eof_index_, writer);
     return;
   }
@@ -117,7 +118,8 @@ void update_first_unassembled_index_(uint64_t& idx, Reader& reader){
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
                                std::vector<bool>& unassembled_present,
                                std::string& data_to_push,
-                               Writer& writer)
+                               Writer& writer,
+                               uint64_t& first_unassembled_index)
 {
 
   if (!data_to_push.empty()) {
@@ -143,6 +145,7 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
   if (it > 0) {
     if (!additional_data.empty()) {
       writer.push(additional_data);
+      first_unassembled_index += additional_data.length();
     }
     
     unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);

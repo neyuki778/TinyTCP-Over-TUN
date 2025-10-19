@@ -17,10 +17,8 @@ void update_first_unassembled_index_(uint64_t& idx, Reader& reader);
 
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
                                std::vector<bool>& unassembled_present,
-                               uint64_t& first_unassembled_index_,
                                std::string& data_to_push,
-                               Writer& writer,
-                               Reader& reader);
+                               Writer& writer);
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
@@ -52,17 +50,14 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     unassembled_bytes.resize(available_capacity);
     unassembled_present.assign(available_capacity, false);
     // unassembled_base_index_ += first_unassembled_index_;
-    update_first_unassembled_index_(first_unassembled_index_, reader);
   }
-
-  // bool pushed = false;
 
   // case1: all data is legal
   if ( first_index == first_unassembled_index_ ) {
     string data_to_push = data;
 
     try_push_assembled_bytes(unassembled_bytes, unassembled_present,
-                              first_unassembled_index_, data_to_push, writer, reader);
+                              data_to_push, writer);
 
     try_close(eof_received_, eof_index_, writer);
     return;
@@ -75,7 +70,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     string data_to_push = data.substr(skip_len);
 
     try_push_assembled_bytes(unassembled_bytes, unassembled_present,
-                              first_unassembled_index_, data_to_push, writer, reader);
+                              data_to_push, writer);
 
     try_close(eof_received_, eof_index_, writer);
     return;
@@ -124,10 +119,8 @@ void update_first_unassembled_index_(uint64_t& idx, Reader& reader){
 
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
                                std::vector<bool>& unassembled_present,
-                               uint64_t& first_unassembled_index_,
                                std::string& data_to_push,
-                               Writer& writer,
-                               Reader& reader)
+                               Writer& writer)
 {
 
   if (!data_to_push.empty()) {
@@ -159,8 +152,6 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
       writer.push(additional_data);
     }
   }
-
-  update_first_unassembled_index_(first_unassembled_index_, reader);
 }
 
 // How many bytes are stored in the Reassembler itself?

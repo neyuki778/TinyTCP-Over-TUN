@@ -40,8 +40,11 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     eof_received_ = true;
   }
 
-  // case0: stream index is too big - 完全超出容量
-  if ( first_index >= first_unacceptable_index_) return;
+  // case0: stream index is too big or too late
+  if ( first_index >= first_unacceptable_index_ or last_index < first_unassembled_index_) {
+    try_close(eof_received_, eof_index_, writer);  
+    return;
+  }
 
   // 裁剪超出容量的数据
   if (first_index + data.length() > first_unacceptable_index_) {

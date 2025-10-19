@@ -154,7 +154,6 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
   if (it > 0) {
     unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
     unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
-    update_first_unassembled_index_(first_unassembled_index_, reader);
 
     if (!additional_data.empty()) {
       writer.push(additional_data);

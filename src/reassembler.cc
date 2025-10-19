@@ -56,6 +56,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
       }
       unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
       unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
+      unassembled_base_index_ += it;
     }
     writer.push(data);
     // pushed = true;
@@ -74,6 +75,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   if (unassembled_bytes.empty()) {
     unassembled_bytes.resize(available_capacity);
     unassembled_present.assign(available_capacity, false);
+    unassembled_base_index_ += first_unassembled_index_;
   }
   // only store when the data lies beyond the current assembled prefix
   if (first_index > first_unassembled_index_) {

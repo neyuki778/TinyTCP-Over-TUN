@@ -22,7 +22,6 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
-  // debug( "unimplemented insert({}, {}, {}) called", first_index, data, is_last_substring );
   Writer& writer = output_.writer();
   Reader& reader = output_.reader();
 
@@ -35,22 +34,24 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   first_unassembled_index_ = first_unpopped_index_ + buffered_in_byte_stream;
   first_unacceptable_index_ = first_unassembled_index_ + available_capacity;
 
-  // close after push last substring
   if (is_last_substring) {
-    // output_.writer().close();
     eof_index_ = last_index;
     eof_received_ = true;
   }
 
-  //case0: stream index is too big
-  if ( first_index > first_unacceptable_index_) return;
+  // case0: stream index is too big - 完全超出容量
+  if ( first_index >= first_unacceptable_index_) return;
+
+  // 裁剪超出容量的数据
+  if (first_index + data.length() > first_unacceptable_index_) {
+    data = data.substr(0, first_unacceptable_index_ - first_index);
+  }
 
   // init reassembler if need or reshape
   if ( unassembled_bytes.empty() && available_capacity > 0 ) {
     unassembled_bytes.resize(available_capacity);
     unassembled_present.assign(available_capacity, false);
-    // unassembled_base_index_ += first_unassembled_index_;
-  }else if (unassembled_bytes.size() != available_capacity && available_capacity > 0) {
+  } else if (unassembled_bytes.size() != available_capacity && available_capacity > 0) {
     unassembled_bytes.resize(available_capacity);
     unassembled_present.resize(available_capacity, false);
   }
@@ -58,34 +59,27 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   // case1: all data is legal
   if ( first_index == first_unassembled_index_ ) {
     string data_to_push = data;
-
     try_push_assembled_bytes(unassembled_bytes, unassembled_present,
                               data_to_push, writer);
-
     try_close(eof_received_, eof_index_, writer);
     return;
   }
 
-  // case2: data is longer than popped
+  // case2: data starts before first_unassembled_index_
   if ( first_index < first_unassembled_index_ ){
-    // writer.push( data.substr(first_unassembled_index_ - first_index ));
-    uint64_t skip_len = first_unassembled_index_ -first_index;
+    uint64_t skip_len = first_unassembled_index_ - first_index;
     string data_to_push = data.substr(skip_len);
-
     try_push_assembled_bytes(unassembled_bytes, unassembled_present,
                               data_to_push, writer);
-
     try_close(eof_received_, eof_index_, writer);
     return;
   }
 
-  // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
+  // case3: data should be stored in reassembler
   uint64_t start_index = first_index - first_unassembled_index_;
-  // only store when the data lies beyond the current assembled prefix
-  if (first_index > first_unassembled_index_) {
+  if (first_index > first_unassembled_index_ && !data.empty()) {
     place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);
   }
-
 }
 
 void place_string_efficiently(

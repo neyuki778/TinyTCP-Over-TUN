@@ -13,6 +13,8 @@ void place_string_efficiently(std::vector<char>& container,
 
 void try_close(bool recv, uint64_t idx, Writer& writer);
 
+void update_first_unassembled_index_(uint64_t& idx, Reader& reader);
+
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
   // debug( "unimplemented insert({}, {}, {}) called", first_index, data, is_last_substring );
@@ -45,8 +47,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     // writer.push( data );
     // first_unpopped_index_ += data.length();
     if (!unassembled_bytes.empty()){
-      // uint64_t first_index_in_unassembled_bytes = last_index - first_unassembled_index_;
-      uint64_t first_index_in_unassembled_bytes = last_index - unassembled_base_index_;
+      uint64_t first_index_in_unassembled_bytes = last_index - first_unassembled_index_;
       auto it = first_index_in_unassembled_bytes;
       for (; it < unassembled_bytes.size(); it++){
         if (unassembled_present[it]){
@@ -57,7 +58,8 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
       }
       unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
       unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
-      unassembled_base_index_ += it;
+      // unassembled_base_index_ += it;
+      update_first_unassembled_index_(first_unassembled_index_, reader);
     }
     writer.push(data);
     // pushed = true;
@@ -72,48 +74,15 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   }
 
   // case3: data should be stored in ressembler, suggested that first_index > first_unassembled_index_
-  // uint64_t start_index = first_index - first_unassembled_index_;
-  // if (unassembled_bytes.empty()) {
-  //   unassembled_bytes.resize(available_capacity);
-  //   unassembled_present.assign(available_capacity, false);
-  //   unassembled_base_index_ += first_unassembled_index_;
-  // }
-  uint64_t start_index = 0;
+  uint64_t start_index = first_index - first_unassembled_index_;
   if (unassembled_bytes.empty()) {
     unassembled_bytes.resize(available_capacity);
     unassembled_present.assign(available_capacity, false);
-    unassembled_base_index_ = first_unassembled_index_;
+    // unassembled_base_index_ += first_unassembled_index_;
+    update_first_unassembled_index_(first_unassembled_index_, reader);
+
   }
-  start_index = first_index - unassembled_base_index_;
-   // ...existing code...
-      if (!unassembled_bytes.empty()){
-        // 以 unassembled_base_index_ 为基准计算 buffer 中的起始位置，防止 underflow
-        size_t idx0 = 0;
-        if (last_index > unassembled_base_index_) {
-          idx0 = static_cast<size_t>(last_index - unassembled_base_index_);
-        } else {
-          idx0 = 0;
-        }
-        // 限定起始位置不超出当前 buffer 大小
-        if (idx0 > unassembled_bytes.size()) idx0 = unassembled_bytes.size();
-  
-        // 从 idx0 开始，拼接连续存在的字节
-        size_t it = idx0;
-        while (it < unassembled_bytes.size() && unassembled_present[it]) {
-          data.push_back(unassembled_bytes[it]);
-          it;
-        }
-  
-        // 要从前端删除的元素个数 = it （因为 buffer 的基准对应 unassembled_base_index_）
-        size_t erase_n = it;
-        if (erase_n > 0) {
-          if (erase_n > unassembled_bytes.size()) erase_n = unassembled_bytes.size();
-          unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + erase_n);
-          unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + erase_n);
-          unassembled_base_index_ += erase_n;
-        }
-      }
-   // ...existing code... // only store when the data lies beyond the current assembled prefix
+  // only store when the data lies beyond the current assembled prefix
   if (first_index > first_unassembled_index_) {
     place_string_efficiently(unassembled_bytes, unassembled_present, data, start_index);
   }
@@ -148,6 +117,9 @@ void try_close(bool recv, uint64_t idx, Writer& writer){
   }
 }
 
+void update_first_unassembled_index_(uint64_t& idx, Reader& reader){
+  idx = reader.bytes_buffered() + reader.bytes_popped();
+}
 // How many bytes are stored in the Reassembler itself?
 // This function is for testing only; don't add extra state to support it.
 uint64_t Reassembler::count_bytes_pending() const

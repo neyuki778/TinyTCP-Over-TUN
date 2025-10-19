@@ -14,7 +14,7 @@ public:
       first_unacceptable_index_( 0 ),
       eof_index_( 0 ),
       eof_received_( false ),
-      unassembled_base_index_( 0 ),
+      // unassembled_base_index_( 0 ),
       unassembled_bytes(),
       unassembled_present()
   {}
@@ -59,7 +59,7 @@ private:
   uint64_t eof_index_;
   bool eof_received_;
 
-  uint64_t unassembled_base_index_;
+  // uint64_t unassembled_base_index_;
   std::vector<char> unassembled_bytes;
   std::vector<bool> unassembled_present;
 };

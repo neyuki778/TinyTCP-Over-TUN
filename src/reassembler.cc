@@ -123,7 +123,9 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
 {
 
   if (!data_to_push.empty()) {
+    uint64_t pushed_len = data_to_push.length();
     writer.push(data_to_push);
+    first_unassembled_index += pushed_len;
     data_to_push.clear();
   }
 

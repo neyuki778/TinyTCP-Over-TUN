@@ -1,6 +1,5 @@
 #include "reassembler.hh"
 #include "debug.hh"
-#include<string_view>
 #include<vector>
 #include<algorithm>
 
@@ -8,12 +7,10 @@ using namespace std;
 
 void place_string_efficiently(std::vector<char>& container,
                               std::vector<bool>& present,
-                              std::string_view data,
+                              std::string data,
                               uint64_t start_index);
 
 void try_close(bool recv, uint64_t idx, Writer& writer);
-
-void update_first_unassembled_index_(uint64_t& idx, Reader& reader);
 
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
                                std::vector<bool>& unassembled_present,
@@ -46,7 +43,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     return;
   }
 
-  // 裁剪超出容量的数据
+  // cut data length
   if (first_index + data.length() > first_unacceptable_index_) {
     data = data.substr(0, first_unacceptable_index_ - first_index);
   }
@@ -89,7 +86,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
 void place_string_efficiently(
     vector<char>& container,
     vector<bool>& present,
-    std::string_view data,
+    std::string data,
     uint64_t start_index)
 {
     uint64_t data_len = data.length();
@@ -112,10 +109,6 @@ void try_close(bool recv, uint64_t idx, Writer& writer){
   if (recv and idx == writer.bytes_pushed()){
     writer.close();
   }
-}
-
-void update_first_unassembled_index_(uint64_t& idx, Reader& reader){
-  idx = reader.bytes_buffered() + reader.bytes_popped();
 }
 
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
@@ -142,7 +135,7 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
     return;
   }
 
-  // 从 unassembled_bytes 的起始位置开始查找连续的数据
+  // find continuous data
   uint64_t it = 0;
   string additional_data;
   for (; it < unassembled_bytes.size(); it++) {

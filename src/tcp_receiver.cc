@@ -29,7 +29,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
 
   uint64_t first_index = message.SYN ? 0 : abs_seqno - 1;
   
-  reassembler_.insert( first_index, message.payload, FIN_ );
+  reassembler_.insert( first_index, message.payload, message.FIN );
 
 }
 

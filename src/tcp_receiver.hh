@@ -10,7 +10,10 @@ public:
   // Construct with given Reassembler
   explicit TCPReceiver( Reassembler&& reassembler ) 
     : reassembler_( std::move( reassembler ) ),
-    received_ISN_{ false }
+    SYN_{ false },
+    FIN_{ false },
+    RST_{ false },
+    ISN_{ 0 }
   {}
 
   /*
@@ -30,5 +33,12 @@ public:
 
 private:
   Reassembler reassembler_;
-  bool received_ISN_;
+  // start
+  bool SYN_;
+  // ending
+  bool FIN_;
+  // erorr
+  bool RST_;
+  // zero point
+  Wrap32 ISN_;
 };

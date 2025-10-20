@@ -6,9 +6,17 @@ using namespace std;
 void TCPReceiver::receive( TCPSenderMessage message )
 {
   // Your code here.
-  SYN_ = message.SYN;
-  FIN_ = message.FIN;
-  RST_ = message.RST;
+  if ( message.SYN ){
+    SYN_ = true;
+    ISN_ = message.seqno;
+  }
+  
+  if ( message.FIN ){
+    FIN_ = true;
+  }
+  uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+
+  reassembler_.insert( message.seqno.unwrap(ISN_, first_unassembled_index), message.payload, FIN_ );
 
 }
 
@@ -20,8 +28,10 @@ TCPReceiverMessage TCPReceiver::send() const
   msg.window_size = writer().available_capacity();
 
   if (SYN_){
-    msg.ackno = Wrap32();
+    uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+    msg.ackno = ISN_.wrap(first_unassembled_index, ISN_);
   }
   if (reader().is_finished()) msg.RST = true;
 
+  return msg;
 }

@@ -43,8 +43,9 @@ TCPReceiverMessage TCPReceiver::send() const
   if (SYN_){
     // uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
     uint64_t first_unassembled_index = writer().bytes_pushed();
-    if (FIN_) first_unassembled_index++;
-    msg.ackno = Wrap32::wrap(first_unassembled_index, ISN_) + 1;
+    uint64_t ackno_abs = first_unassembled_index + 1;
+    if (writer().is_closed()) ackno_abs++;
+    msg.ackno = Wrap32::wrap(first_unassembled_index, ISN_);
   }
 
   return msg;

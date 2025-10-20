@@ -9,7 +9,6 @@ void TCPReceiver::receive( TCPSenderMessage message )
     
   if ( message.SYN ){
     SYN_ = true;
-    ISN_ = message.seqno + 1;
   }
   
   if ( message.FIN ){
@@ -31,7 +30,7 @@ TCPReceiverMessage TCPReceiver::send() const
 
   if (SYN_){
     uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
-    msg.ackno = ISN_.wrap(first_unassembled_index, ISN_);
+    msg.ackno = ISN_.wrap(first_unassembled_index, ISN_) + 1;
   }
   if (reader().is_finished()) msg.RST = true;
 

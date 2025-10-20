@@ -6,16 +6,19 @@ using namespace std;
 void TCPReceiver::receive( TCPSenderMessage message )
 {
   // Your code here.
+  
+  uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+  
   if ( message.SYN ){
     SYN_ = true;
     ISN_ = message.seqno;
+    first_unassembled_index += 1;
   }
   
   if ( message.FIN ){
     FIN_ = true;
   }
-  uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
-
+  
   reassembler_.insert( message.seqno.unwrap(ISN_, first_unassembled_index), message.payload, FIN_ );
 
 }

@@ -6,8 +6,10 @@ using namespace std;
 void TCPReceiver::receive( TCPSenderMessage message )
 {
   // Your code here.
-  debug( "unimplemented receive() called" );
-  (void)message;
+  SYN_ = message.SYN;
+  FIN_ = message.FIN;
+  RST_ = message.RST;
+
 }
 
 TCPReceiverMessage TCPReceiver::send() const
@@ -17,7 +19,7 @@ TCPReceiverMessage TCPReceiver::send() const
   msg.RST = false;
   msg.window_size = writer().available_capacity();
 
-  if (received_ISN_){
+  if (SYN_){
     msg.ackno = Wrap32();
   }
   if (reader().is_finished()) msg.RST = true;

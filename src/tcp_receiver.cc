@@ -14,7 +14,11 @@ void TCPReceiver::receive( TCPSenderMessage message )
     }
   }
 
-  RST_ = message.RST or RST_;
+  if (message.RST) {
+    RST_ = true;
+    reader().set_error();
+    return; // Receiving RST should abort processing of the segment.
+  }
 
   // must have seen SYN to proceed
   if ( !SYN_ ) {

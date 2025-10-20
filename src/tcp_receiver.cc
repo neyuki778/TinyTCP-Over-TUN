@@ -12,7 +12,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
     ISN_ = message.seqno;
   }
   
-  if ( message.FIN ){
+  if ( SYN_ and message.FIN ){
     FIN_ = true;
   }
 

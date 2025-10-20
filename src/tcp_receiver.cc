@@ -14,6 +14,8 @@ void TCPReceiver::receive( TCPSenderMessage message )
     }
   }
 
+  RST_ = message.RST or RST_;
+
   // must have seen SYN to proceed
   if ( !SYN_ ) {
     return;

@@ -27,7 +27,7 @@ TCPReceiverMessage TCPReceiver::send() const
   // Your code here.
   TCPReceiverMessage msg;
   msg.RST = false;
-  msg.window_size = writer().available_capacity();
+  msg.window_size = writer().available_capacity() > UINT16_MAX ? UINT16_MAX : writer().available_capacity();
 
   if (SYN_){
     uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();

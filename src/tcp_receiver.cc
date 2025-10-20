@@ -31,6 +31,7 @@ TCPReceiverMessage TCPReceiver::send() const
 
   if (SYN_){
     uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+    if (FIN_) first_unassembled_index++;
     msg.ackno = ISN_.wrap(first_unassembled_index, ISN_) + 1;
   }
   if (reader().is_finished()) msg.RST = true;

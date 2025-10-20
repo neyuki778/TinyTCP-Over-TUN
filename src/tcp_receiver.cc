@@ -18,7 +18,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
 
   uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
   
-  reassembler_.insert( message.seqno.unwrap(ISN_, first_unassembled_index), message.payload, FIN_ );
+  reassembler_.insert( message.seqno.unwrap(ISN_, first_unassembled_index) - 1, message.payload, FIN_ );
 
 }
 

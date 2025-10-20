@@ -7,18 +7,29 @@ void TCPReceiver::receive( TCPSenderMessage message )
 {
   // Your code here.
     
-  if ( message.SYN ){
-    SYN_ = true;
-    ISN_ = message.seqno;
+  if ( message.SYN ) {
+    if ( !SYN_ ) {
+      SYN_ = true;
+      ISN_ = message.seqno;
+    }
+  }
+
+  // must have seen SYN to proceed
+  if ( !SYN_ ) {
+    return;
   }
   
-  if ( SYN_ and message.FIN ){
+  if ( message.FIN ){
     FIN_ = true;
   }
 
-  uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+  uint64_t checkpoint = writer().bytes_pushed();
+  // balck magic
+  uint64_t abs_seqno = message.seqno.unwrap( ISN_, checkpoint );
+
+  uint64_t first_index = message.SYN ? 0 : abs_seqno - 1;
   
-  reassembler_.insert( message.seqno.unwrap(ISN_, first_unassembled_index) - 1, message.payload, FIN_ );
+  reassembler_.insert( first_index, message.payload, FIN_ );
 
 }
 
@@ -26,15 +37,15 @@ TCPReceiverMessage TCPReceiver::send() const
 {
   // Your code here.
   TCPReceiverMessage msg;
-  msg.RST = false;
+  msg.RST = RST_;
   msg.window_size = writer().available_capacity() > UINT16_MAX ? UINT16_MAX : writer().available_capacity();
 
   if (SYN_){
-    uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+    // uint64_t first_unassembled_index = reader().bytes_popped() + reader().bytes_buffered();
+    uint64_t first_unassembled_index = writer().bytes_pushed();
     if (FIN_) first_unassembled_index++;
-    msg.ackno = ISN_.wrap(first_unassembled_index, ISN_) + 1;
+    msg.ackno = Wrap32::wrap(first_unassembled_index, ISN_) + 1;
   }
-  if (reader().is_finished()) msg.RST = true;
 
   return msg;
 }

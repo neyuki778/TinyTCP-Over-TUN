@@ -39,7 +39,11 @@ TCPReceiverMessage TCPReceiver::send() const
 {
   // Your code here.
   TCPReceiverMessage msg;
-  msg.RST = RST_;
+  if (writer().has_error()) {
+    msg.RST = true;
+  } else {
+    msg.RST = RST_;
+  }
   msg.window_size = writer().available_capacity() > UINT16_MAX ? UINT16_MAX : writer().available_capacity();
 
   if (SYN_){

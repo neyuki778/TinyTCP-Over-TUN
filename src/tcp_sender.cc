@@ -73,7 +73,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
   // next_ackno_ ?
   ackno_ = msg.ackno->unwrap(isn_, next_ackno_);
   for (auto &it : outstanding_seqno){
-    if (msg.ackno and it.first == *msg.ackno){
+    if (msg.ackno and it.first + next_ackno_ == *msg.ackno){
       it.second = true;
     }
   }

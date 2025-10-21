@@ -56,6 +56,6 @@ private:
 
   uint16_t window_size_;
 
-  deque<std::pair<Wrap32, bool>> outstanding_seqno;
+  std::deque<std::pair<Wrap32, bool>> outstanding_seqno;
 
 };

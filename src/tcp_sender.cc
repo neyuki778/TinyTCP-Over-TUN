@@ -54,6 +54,7 @@ void TCPSender::push( const TransmitFunction& transmit )
 TCPSenderMessage TCPSender::make_empty_message() const
 {
   TCPSenderMessage msg;
+  msg.seqno = Wrap32::wrap(next_ackno_, isn_);
   return msg;
 }
 

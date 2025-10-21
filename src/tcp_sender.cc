@@ -45,10 +45,9 @@ void TCPSender::push( const TransmitFunction& transmit )
   // payload
   string payload(payload_view.substr(0, window_size_ - msg.sequence_length()));
   msg.payload = payload;
-  next_ackno_ += msg.sequence_length();
   // seqno
-  msg.seqno = Wrap32::wrap(next_ackno_, isn_);
-
+  msg.seqno = Wrap32::wrap(next_ackno_, isn_); 
+  next_ackno_ += msg.sequence_length();
   transmit(msg);
 }
 

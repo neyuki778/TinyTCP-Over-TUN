@@ -42,4 +42,13 @@ private:
   ByteStream input_;
   Wrap32 isn_;
   uint64_t initial_RTO_ms_;
+
+  bool syn_sent_;
+  bool fin_sent_;
+
+  uint64_t ackno_;
+  uint64_t next_ackno_;
+
+  uint16_t window_size_;
+
 };

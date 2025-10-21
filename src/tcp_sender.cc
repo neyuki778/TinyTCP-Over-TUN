@@ -9,7 +9,7 @@ using namespace std;
 uint64_t TCPSender::sequence_numbers_in_flight() const
 {
   uint64_t cnt = 0;
-  for (auto it : outstanding_seqno){
+  for (auto &it : outstanding_seqno){
     if (!it.second){
       cnt++;
     }
@@ -52,9 +52,11 @@ void TCPSender::push( const TransmitFunction& transmit )
   msg.payload = payload;
   // seqno
   msg.seqno = Wrap32::wrap(next_ackno_, isn_); 
-  next_ackno_ += msg.sequence_length();
-  transmit(msg);
-  outstanding_seqno.emplace_back(pair(msg.seqno, false));
+  if (msg.sequence_length()){
+    next_ackno_ += msg.sequence_length();
+    transmit(msg);
+    outstanding_seqno.emplace_back(pair(msg.seqno, false));
+  }
 }
 
 TCPSenderMessage TCPSender::make_empty_message() const
@@ -70,8 +72,8 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
   window_size_ = msg.window_size;
   // next_ackno_ ?
   ackno_ = msg.ackno->unwrap(isn_, next_ackno_);
-  for (auto it : outstanding_seqno){
-    if (it.first == msg.ackno){
+  for (auto &it : outstanding_seqno){
+    if (msg.ackno and it.first == *msg.ackno){
       it.second = true;
     }
   }

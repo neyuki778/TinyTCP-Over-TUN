@@ -32,8 +32,9 @@ TCPSenderMessage TCPSender::make_empty_message() const
 
 void TCPSender::receive( const TCPReceiverMessage& msg )
 {
-  debug( "unimplemented receive() called" );
-  (void)msg;
+  window_size_ = msg.window_size;
+  ackno_ = msg.ackno->unwrap(isn_, next_ackno_);
+  if (msg.RST) writer().set_error();
 }
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )

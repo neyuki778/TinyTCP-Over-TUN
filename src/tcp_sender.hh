@@ -46,6 +46,7 @@ private:
   bool syn_sent_;
   bool fin_sent_;
 
+  // received from msg
   uint64_t ackno_;
   uint64_t next_ackno_;
 

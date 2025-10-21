@@ -22,15 +22,16 @@ uint64_t TCPSender::consecutive_retransmissions() const
 void TCPSender::push( const TransmitFunction& transmit )
 {
   TCPSenderMessage msg = make_empty_message();
-  if (!window_size_) {
-    transmit(msg);
-    return;
-  }
   string_view payload_view = reader().peek();
   // SYN
   if (!syn_sent_){
     syn_sent_ = true;
     msg.SYN = true;
+  }
+  // 
+  if (!window_size_) {
+    transmit(msg);
+    return;
   }
   // FIN
   if (reader().is_finished()){

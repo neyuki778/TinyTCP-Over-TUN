@@ -8,8 +8,13 @@ using namespace std;
 // This function is for testing only; don't add extra state to support it.
 uint64_t TCPSender::sequence_numbers_in_flight() const
 {
-  debug( "unimplemented sequence_numbers_in_flight() called" );
-  return {};
+  uint64_t cnt = 0;
+  for (auto it : outstanding_seqno){
+    if (!it.second){
+      cnt++;
+    }
+  }
+  return cnt;
 }
 
 // This function is for testing only; don't add extra state to support it.
@@ -49,6 +54,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   msg.seqno = Wrap32::wrap(next_ackno_, isn_); 
   next_ackno_ += msg.sequence_length();
   transmit(msg);
+  outstanding_seqno.emplace_back(pair(msg.seqno, false));
 }
 
 TCPSenderMessage TCPSender::make_empty_message() const
@@ -60,10 +66,15 @@ TCPSenderMessage TCPSender::make_empty_message() const
 
 void TCPSender::receive( const TCPReceiverMessage& msg )
 {
+  if (msg.RST) writer().set_error();
   window_size_ = msg.window_size;
   // next_ackno_ ?
   ackno_ = msg.ackno->unwrap(isn_, next_ackno_);
-  if (msg.RST) writer().set_error();
+  for (auto it : outstanding_seqno){
+    if (it.first == msg.ackno){
+      it.second = true;
+    }
+  }
 }
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )

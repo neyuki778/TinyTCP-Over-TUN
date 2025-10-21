@@ -11,7 +11,8 @@ class TCPSender
 public:
   /* Construct TCP sender with given default Retransmission Timeout and possible ISN */
   TCPSender( ByteStream&& input, Wrap32 isn, uint64_t initial_RTO_ms )
-    : input_( std::move( input ) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms )
+    : input_( std::move( input ) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms ),
+      syn_sent_( false ), fin_sent_( false ), ackno_( 0 ), next_ackno_( 0 ), window_size_( 0 )
   {}
 
   /* Generate an empty TCPSenderMessage */

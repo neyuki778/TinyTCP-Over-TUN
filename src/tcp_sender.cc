@@ -26,8 +26,8 @@ void TCPSender::push( const TransmitFunction& transmit )
 
 TCPSenderMessage TCPSender::make_empty_message() const
 {
-  debug( "unimplemented make_empty_message() called" );
-  return {};
+  TCPSenderMessage msg;
+  return msg;
 }
 
 void TCPSender::receive( const TCPReceiverMessage& msg )

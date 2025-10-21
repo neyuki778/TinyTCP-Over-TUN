@@ -29,10 +29,10 @@ void TCPSender::push( const TransmitFunction& transmit )
     msg.SYN = true;
   }
   // 
-  if (!window_size_) {
-    transmit(msg);
-    return;
-  }
+  // if (!window_size_) {
+  //   transmit(msg);
+  //   return;
+  // }
   // FIN
   if (reader().is_finished()){
     msg.FIN = true;

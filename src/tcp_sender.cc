@@ -34,9 +34,13 @@ void TCPSender::push( const TransmitFunction& transmit )
   // FIN
   if (reader().is_finished()){
     // do not send after close -- test29
+    fin_sent_ = true;
     return;
-    // msg.FIN = true;
-    // fin_sent_ = true;
+  }
+  if (fin_sent_){
+    msg.FIN = true;
+    transmit(msg);
+    return;
   }
   // RST
   if (writer().has_error()){

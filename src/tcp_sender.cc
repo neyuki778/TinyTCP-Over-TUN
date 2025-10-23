@@ -16,96 +16,65 @@ uint64_t TCPSender::sequence_numbers_in_flight() const
   return cnt;
 }
 
-// This function is for testing only; don't add extra state to support it.
-uint64_t TCPSender::consecutive_retransmissions() const
-{
-  return consecutive_retransmissions_;
-}
-
 void TCPSender::push( const TransmitFunction& transmit )
-{
-  uint64_t available_window = window_size_ - sequence_numbers_in_flight();
-  
-  if (available_window == 0) return;  // Window is full, cannot send
-  
-  TCPSenderMessage msg = make_empty_message();
-  string_view payload_view = reader().peek();
-  
-  // SYN
-  if (!syn_sent_){
-    syn_sent_ = true; 
-    msg.SYN = true;
-    available_window -= 1;  // SYN occupies one sequence number
-  }
-  
-  // RST
-  if (writer().has_error()){
-    msg.RST = true;
-  }
-  
-  const uint64_t MAX_PAYLOAD = static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE);
-  
-  // Fill the window
-  while (available_window >= 0) {
-    // Calculate payload length for this transmission
+{ 
+  while (true) {
+    uint64_t available_window = window_size_ - sequence_numbers_in_flight();
+    if (available_window == 0) break;
+    
+    TCPSenderMessage msg = make_empty_message();
+    
+    // SYN
+    if (!syn_sent_){
+      msg.SYN = true;
+      syn_sent_ = true;
+      available_window -= 1;
+    }
+    
+    // RST
+    if (writer().has_error()){
+      msg.RST = true;
+    }
+    
+    const uint64_t MAX_PAYLOAD = static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE);
+    string_view payload_view = reader().peek();
+    
+    // payload
     uint64_t payload_len = std::min({
       MAX_PAYLOAD,
       available_window,
       static_cast<uint64_t>(payload_view.size())
     });
     
-    // If there is no data to send
-    if (payload_len == 0) {
-      // Check if FIN can be sent
-      if (writer().is_closed() && !fin_sent_ && available_window > 0) {
-        msg.FIN = true;
-        fin_sent_ = true;
-      } else {
-        break;  // No data and cannot send FIN, exit
-      }
-    } else {
-      // Data available to send
+    if (payload_len > 0) {
       msg.payload = string(payload_view.substr(0, payload_len));
-      payload_view = payload_view.substr(payload_len);
-      
-      // Check if FIN can be piggybacked
-      if (writer().is_closed() && !fin_sent_ && payload_view.empty() 
-          && available_window > payload_len) {
-        msg.FIN = true;
-        fin_sent_ = true;
-      }
+      available_window -= payload_len;
     }
     
-    // If the message has no content (no SYN/FIN/payload), do not send
+    // FIN
+    if (writer().is_closed() && !fin_sent_ && available_window > 0) {
+      msg.FIN = true;
+      fin_sent_ = true;
+    }
+    
     if (msg.sequence_length() == 0) {
       break;
     }
-    
-    // Send the message
+
     transmit(msg);
     outstanding_seqno_.emplace_back(msg);
-    
-    // Update state
-    uint64_t seq_len = msg.sequence_length();
-    next_seqno_ += seq_len;
-    available_window -= seq_len;
+    next_seqno_ += msg.sequence_length();
     is_timer_runnning_ = true;
     
-    // Consume data from reader
     if (msg.payload.size() > 0) {
       reader().pop(msg.payload.size());
     }
     
-    // Stop if FIN was sent
     if (msg.FIN) {
       break;
     }
-    
-    // Prepare for the next message
-    msg = make_empty_message();
   }
 }
-
 
 TCPSenderMessage TCPSender::make_empty_message() const
 {

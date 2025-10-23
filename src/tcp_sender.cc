@@ -97,7 +97,7 @@ void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& trans
 {
   if (is_timer_runnning_) time_elapsed_ += ms_since_last_tick;
   // shuold retransmition
-  if (time_elapsed_ > current_RTO_ms_){
+  if (time_elapsed_ >= current_RTO_ms_){
     current_RTO_ms_ *= 2;
     time_elapsed_ = 0;
     consecutive_retransmissions_++;

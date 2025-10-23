@@ -98,6 +98,11 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )
 {
   if (is_timer_runnning_) time_elapsed_ += ms_since_last_tick;
+  // consecutive_retransmissions never bigger than MAX_RETX_ATTEMPTS --test32
+  if (consecutive_retransmissions_ >= TCPConfig::MAX_RETX_ATTEMPTS) {
+      writer().set_error();
+      return;
+    }
   // shuold retransmition -- test31
   if (time_elapsed_ >= current_RTO_ms_){
     // zero-window probe
@@ -105,10 +110,6 @@ void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& trans
     if (window_size_ > 0){
     current_RTO_ms_ *= 2;
     consecutive_retransmissions_++;
-    if (consecutive_retransmissions_ > TCPConfig::MAX_RETX_ATTEMPTS) {
-      writer().set_error();
-      return;
-    }
   }
     transmit(outstanding_seqno_.front());
   }

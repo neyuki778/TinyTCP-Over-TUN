@@ -46,7 +46,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   const uint64_t MAX_PAYLOAD = static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE);
   
   // Fill the window
-  while (available_window > 0) {
+  while (available_window >= 0) {
     // Calculate payload length for this transmission
     uint64_t payload_len = std::min({
       MAX_PAYLOAD,

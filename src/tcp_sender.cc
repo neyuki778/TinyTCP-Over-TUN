@@ -2,6 +2,7 @@
 #include "debug.hh"
 #include "tcp_config.hh"
 #include <string_view>
+#include<algorithm>
 
 using namespace std;
 
@@ -36,6 +37,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   }
   // payload -- test28
   uint64_t avalible_window = window_size_ - msg.sequence_length() - sequence_numbers_in_flight();
+  avalible_window = std::min(avalible_window, static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE));
   string payload(payload_view.substr(0, avalible_window));
   msg.payload = payload;
   // FIN --test29 Piggyback FIN
@@ -98,6 +100,10 @@ void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& trans
   if (is_timer_runnning_) time_elapsed_ += ms_since_last_tick;
   // shuold retransmition
   if (time_elapsed_ >= current_RTO_ms_){
+  if (consecutive_retransmissions_ >= TCPConfig::MAX_RETX_ATTEMPTS) {
+    writer().set_error();
+    return;
+    }
     current_RTO_ms_ *= 2;
     time_elapsed_ = 0;
     consecutive_retransmissions_++;

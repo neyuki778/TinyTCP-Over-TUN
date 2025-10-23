@@ -83,6 +83,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
         // reset rto state
         if (!reset){
           current_RTO_ms_ = initial_RTO_ms_;
+          consecutive_retransmissions_ = 0;
           is_timer_runnning_ = false;
           time_elapsed_ = 0;
           reset = true;

@@ -49,6 +49,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     next_seqno_ += msg.sequence_length();
     transmit(msg);
     outstanding_seqno_.emplace_back(msg);
+    reader().pop(payload.size());
   }
 }
 

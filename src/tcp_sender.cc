@@ -106,11 +106,12 @@ void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& trans
   // shuold retransmition -- test31
   if (time_elapsed_ >= current_RTO_ms_){
     // zero-window probe
+    // transmits anyway --test32 Retx SYN until too many retransmissions
     time_elapsed_ = 0;
+    transmit(outstanding_seqno_.front());
     if (window_size_ > 0){
     current_RTO_ms_ *= 2;
     consecutive_retransmissions_++;
-  }
-    transmit(outstanding_seqno_.front());
+    }
   }
 }

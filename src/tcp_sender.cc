@@ -90,6 +90,8 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
         }
 
       }else{
+        // partly pushed should start timer --test32
+        is_timer_runnning_ = true;
         break;
       }
     }

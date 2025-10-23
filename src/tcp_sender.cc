@@ -49,7 +49,10 @@ void TCPSender::push( const TransmitFunction& transmit )
     next_seqno_ += msg.sequence_length();
     transmit(msg);
     outstanding_seqno_.emplace_back(msg);
+    // consume payload in reader -- test27
     reader().pop(payload.size());
+    // resize window-size -- test28
+    window_size_ -= msg.sequence_length();
   }
 }
 
@@ -66,8 +69,9 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
   window_size_ = msg.window_size;
   // msg.ackno: the verified seqno of receiver
   if (msg.ackno){
+    // receiver says that the seqno has been confirmed
     uint64_t new_ackno = msg.ackno->unwrap(isn_, next_seqno_);  
-    // new_ackno is a illgal ackno
+
     if (new_ackno > next_seqno_) return;
     while(!outstanding_seqno_.empty()){
       auto &it = outstanding_seqno_.front();

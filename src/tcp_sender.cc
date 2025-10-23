@@ -2,7 +2,7 @@
 #include "debug.hh"
 #include "tcp_config.hh"
 #include <string_view>
-#include<algorithm>
+#include <algorithm>
 
 using namespace std;
 
@@ -24,38 +24,88 @@ uint64_t TCPSender::consecutive_retransmissions() const
 
 void TCPSender::push( const TransmitFunction& transmit )
 {
+  uint64_t available_window = window_size_ - sequence_numbers_in_flight();
+  
+  if (available_window == 0) return;  // Window is full, cannot send
+  
   TCPSenderMessage msg = make_empty_message();
   string_view payload_view = reader().peek();
+  
   // SYN
   if (!syn_sent_){
     syn_sent_ = true; 
     msg.SYN = true;
+    available_window -= 1;  // SYN occupies one sequence number
   }
+  
   // RST
   if (writer().has_error()){
     msg.RST = true;
   }
-  // payload -- test28
-  uint64_t avalible_window = window_size_ - msg.sequence_length() - sequence_numbers_in_flight();
-  avalible_window = std::min(avalible_window, static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE));
-  string payload(payload_view.substr(0, avalible_window));
-  msg.payload = payload;
-  // FIN --test29 Piggyback FIN
-  if (writer().is_closed() and !fin_sent_ and avalible_window - payload.size() > 0){
-    msg.FIN = true;
-    fin_sent_ = true;
-  }
-  // seqno
-  msg.seqno = Wrap32::wrap(next_seqno_, isn_); 
-  if (msg.sequence_length()){
-    next_seqno_ += msg.sequence_length();
-    is_timer_runnning_ = true;
+  
+  const uint64_t MAX_PAYLOAD = static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE);
+  
+  // Fill the window
+  while (available_window > 0) {
+    // Calculate payload length for this transmission
+    uint64_t payload_len = std::min({
+      MAX_PAYLOAD,
+      available_window,
+      static_cast<uint64_t>(payload_view.size())
+    });
+    
+    // If there is no data to send
+    if (payload_len == 0) {
+      // Check if FIN can be sent
+      if (writer().is_closed() && !fin_sent_ && available_window > 0) {
+        msg.FIN = true;
+        fin_sent_ = true;
+      } else {
+        break;  // No data and cannot send FIN, exit
+      }
+    } else {
+      // Data available to send
+      msg.payload = string(payload_view.substr(0, payload_len));
+      payload_view = payload_view.substr(payload_len);
+      
+      // Check if FIN can be piggybacked
+      if (writer().is_closed() && !fin_sent_ && payload_view.empty() 
+          && available_window > payload_len) {
+        msg.FIN = true;
+        fin_sent_ = true;
+      }
+    }
+    
+    // If the message has no content (no SYN/FIN/payload), do not send
+    if (msg.sequence_length() == 0) {
+      break;
+    }
+    
+    // Send the message
     transmit(msg);
     outstanding_seqno_.emplace_back(msg);
-    // consume payload in reader -- test27
-    reader().pop(payload.size());
+    
+    // Update state
+    uint64_t seq_len = msg.sequence_length();
+    next_seqno_ += seq_len;
+    available_window -= seq_len;
+    is_timer_runnning_ = true;
+    
+    // Consume data from reader
+    if (msg.payload.size() > 0) {
+      reader().pop(msg.payload.size());
+    }
+    
+    // Stop if FIN was sent
+    if (msg.FIN) {
+      break;
+    }
+    
+    // Prepare for the next message
+    msg = make_empty_message();
   }
 }
+
 
 TCPSenderMessage TCPSender::make_empty_message() const
 {
@@ -72,9 +122,8 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
   if (msg.ackno){
     // receiver says that the seqno has been confirmed
     uint64_t new_ackno = msg.ackno->unwrap(isn_, next_seqno_);  
-
     if (new_ackno > next_seqno_) return;
-    bool reset;
+    bool reset = false;
     while(!outstanding_seqno_.empty()){
       auto &it = outstanding_seqno_.front();
       // how to confirm “it”?
@@ -88,7 +137,6 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
           time_elapsed_ = 0;
           reset = true;
         }
-
       }else{
         // partly pushed should start timer --test32
         is_timer_runnning_ = true;

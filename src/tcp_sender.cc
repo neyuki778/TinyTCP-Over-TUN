@@ -9,10 +9,8 @@ using namespace std;
 uint64_t TCPSender::sequence_numbers_in_flight() const
 {
   uint64_t cnt = 0;
-  for (auto &it : outstanding_seqno){
-    if (!it.second){
-      cnt++;
-    }
+  for (auto &it : outstanding_seqno_){
+    cnt += it.sequence_length();
   }
   return cnt;
 }
@@ -30,14 +28,9 @@ void TCPSender::push( const TransmitFunction& transmit )
   string_view payload_view = reader().peek();
   // SYN
   if (!syn_sent_){
-    syn_sent_ = true;
+    syn_sent_ = true; 
     msg.SYN = true;
   }
-  // 
-  // if (!window_size_) {
-  //   transmit(msg);
-  //   return;
-  // }
   // FIN
   if (reader().is_finished()){
     msg.FIN = true;
@@ -51,18 +44,18 @@ void TCPSender::push( const TransmitFunction& transmit )
   string payload(payload_view.substr(0, window_size_ - msg.sequence_length()));
   msg.payload = payload;
   // seqno
-  msg.seqno = Wrap32::wrap(next_ackno_, isn_); 
+  msg.seqno = Wrap32::wrap(next_seqno_, isn_); 
   if (msg.sequence_length()){
-    next_ackno_ += msg.sequence_length();
+    next_seqno_ += msg.sequence_length();
     transmit(msg);
-    outstanding_seqno.emplace_back(pair(msg.seqno, false));
+    outstanding_seqno_.emplace_back(msg);
   }
 }
 
 TCPSenderMessage TCPSender::make_empty_message() const
 {
   TCPSenderMessage msg;
-  msg.seqno = Wrap32::wrap(next_ackno_, isn_);
+  msg.seqno = Wrap32::wrap(next_seqno_, isn_);
   return msg;
 }
 
@@ -70,11 +63,19 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 {
   if (msg.RST) writer().set_error();
   window_size_ = msg.window_size;
-  // next_ackno_ ?
-  ackno_ = msg.ackno->unwrap(isn_, next_ackno_);
-  for (auto &it : outstanding_seqno){
-    if (msg.ackno and it.first + next_ackno_ == *msg.ackno){
-      it.second = true;
+  // msg.ackno: the verified seqno of receiver
+  if (msg.ackno){
+    uint64_t new_ackno = msg.ackno->unwrap(isn_, next_seqno_);  
+    // new_ackno is a illgal ackno
+    if (new_ackno > next_seqno_) return;
+    while(!outstanding_seqno_.empty()){
+      auto &it = outstanding_seqno_.front();
+      // how to confirm “it”?
+      if (it.seqno.unwrap(isn_, next_seqno_) + it.sequence_length() <= new_ackno){
+        outstanding_seqno_.pop_front();
+      }else{
+        break;
+      }
     }
   }
 }

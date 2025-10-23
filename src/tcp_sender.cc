@@ -31,23 +31,18 @@ void TCPSender::push( const TransmitFunction& transmit )
     syn_sent_ = true; 
     msg.SYN = true;
   }
-  // FIN
-  if (reader().is_finished() and !fin_sent_){
-    // sent FIN atfer close if can -- test29
-    if (window_size_ - sequence_numbers_in_flight() > 0){
-      msg.FIN = true;
-      transmit(msg);
-      fin_sent_ = true;
-    }
-    return;
-  }
   // RST
   if (writer().has_error()){
     msg.RST = true;
   }
   // payload -- test28
-  string payload(payload_view.substr(0, window_size_ - msg.sequence_length() - sequence_numbers_in_flight()));
+  uint64_t avalible_window = window_size_ - msg.sequence_length() - sequence_numbers_in_flight();
+  string payload(payload_view.substr(0, avalible_window));
   msg.payload = payload;
+  // FIN --test29 Piggyback FIN
+  if (writer().is_closed() and !fin_sent_ and avalible_window - payload.size() > 0){
+    msg.FIN = true;
+  }
   // seqno
   msg.seqno = Wrap32::wrap(next_seqno_, isn_); 
   if (msg.sequence_length()){

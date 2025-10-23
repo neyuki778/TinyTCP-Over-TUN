@@ -42,6 +42,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   // FIN --test29 Piggyback FIN
   if (writer().is_closed() and !fin_sent_ and avalible_window - payload.size() > 0){
     msg.FIN = true;
+    fin_sent_ = true;
   }
   // seqno
   msg.seqno = Wrap32::wrap(next_seqno_, isn_); 

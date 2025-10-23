@@ -32,22 +32,21 @@ void TCPSender::push( const TransmitFunction& transmit )
     msg.SYN = true;
   }
   // FIN
-  if (reader().is_finished()){
-    // do not send after close -- test29
-    fin_sent_ = true;
-    return;
-  }
-  if (fin_sent_){
-    msg.FIN = true;
-    transmit(msg);
+  if (reader().is_finished() and !fin_sent_){
+    // sent FIN atfer close if can -- test29
+    if (window_size_ - sequence_numbers_in_flight() > 0){
+      msg.FIN = true;
+      transmit(msg);
+      fin_sent_ = true;
+    }
     return;
   }
   // RST
   if (writer().has_error()){
     msg.RST = true;
   }
-  // payload
-  string payload(payload_view.substr(0, window_size_ - msg.sequence_length()));
+  // payload -- test28
+  string payload(payload_view.substr(0, window_size_ - msg.sequence_length() - sequence_numbers_in_flight()));
   msg.payload = payload;
   // seqno
   msg.seqno = Wrap32::wrap(next_seqno_, isn_); 
@@ -57,8 +56,6 @@ void TCPSender::push( const TransmitFunction& transmit )
     outstanding_seqno_.emplace_back(msg);
     // consume payload in reader -- test27
     reader().pop(payload.size());
-    // resize window-size -- test28
-    window_size_ -= msg.sequence_length();
   }
 }
 

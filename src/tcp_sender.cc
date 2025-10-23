@@ -42,6 +42,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     // RST
     if (writer().has_error()){
       msg.RST = true;
+      rst_sent_ = true;
     }
     
     const uint64_t MAX_PAYLOAD = static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE);
@@ -88,6 +89,7 @@ TCPSenderMessage TCPSender::make_empty_message() const
 {
   TCPSenderMessage msg;
   msg.seqno = Wrap32::wrap(next_seqno_, isn_);
+  msg.RST = rst_sent_;
   return msg;
 }
 

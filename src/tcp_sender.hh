@@ -15,7 +15,8 @@ public:
   TCPSender( ByteStream&& input, Wrap32 isn, uint64_t initial_RTO_ms )
     : input_( std::move( input ) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms ),
       syn_sent_( false ), fin_sent_( false ), ackno_( 0 ), next_seqno_( 0 ), 
-      window_size_( 0 ), outstanding_seqno_()
+      window_size_( 0 ), outstanding_seqno_(),
+      time_elapsed_( 0 ), current_RTO_ms_( initial_RTO_ms ), consecutive_retransmissions_( 0 ), is_timer_runnning_( false )
   {}
 
   /* Generate an empty TCPSenderMessage */
@@ -59,4 +60,9 @@ private:
 
   std::deque<TCPSenderMessage> outstanding_seqno_;
 
+  // retransmission time out
+  uint64_t time_elapsed_;
+  uint64_t current_RTO_ms_;
+  uint64_t consecutive_retransmissions_;
+  bool is_timer_runnning_;
 };

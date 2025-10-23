@@ -18,8 +18,7 @@ uint64_t TCPSender::sequence_numbers_in_flight() const
 // This function is for testing only; don't add extra state to support it.
 uint64_t TCPSender::consecutive_retransmissions() const
 {
-  debug( "unimplemented consecutive_retransmissions() called" );
-  return {};
+  return consecutive_retransmissions_;
 }
 
 void TCPSender::push( const TransmitFunction& transmit )
@@ -48,6 +47,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   msg.seqno = Wrap32::wrap(next_seqno_, isn_); 
   if (msg.sequence_length()){
     next_seqno_ += msg.sequence_length();
+    is_timer_runnning_ = true;
     transmit(msg);
     outstanding_seqno_.emplace_back(msg);
     // consume payload in reader -- test27
@@ -72,11 +72,20 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
     uint64_t new_ackno = msg.ackno->unwrap(isn_, next_seqno_);  
 
     if (new_ackno > next_seqno_) return;
+    bool reset;
     while(!outstanding_seqno_.empty()){
       auto &it = outstanding_seqno_.front();
       // how to confirm “it”?
       if (it.seqno.unwrap(isn_, next_seqno_) + it.sequence_length() <= new_ackno){
         outstanding_seqno_.pop_front();
+        // reset rto state
+        if (!reset){
+          current_RTO_ms_ = initial_RTO_ms_;
+          is_timer_runnning_ = false;
+          time_elapsed_ = 0;
+          reset = true;
+        }
+
       }else{
         break;
       }
@@ -86,6 +95,12 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )
 {
-  debug( "unimplemented tick({}, ...) called", ms_since_last_tick );
-  (void)transmit;
+  if (is_timer_runnning_) time_elapsed_ += ms_since_last_tick;
+  // shuold retransmition
+  if (time_elapsed_ > current_RTO_ms_){
+    current_RTO_ms_ *= 2;
+    time_elapsed_ = 0;
+    consecutive_retransmissions_++;
+    transmit(outstanding_seqno_.front());
+  }
 }

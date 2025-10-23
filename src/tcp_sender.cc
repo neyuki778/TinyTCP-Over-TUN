@@ -59,8 +59,8 @@ void TCPSender::push( const TransmitFunction& transmit )
       available_window -= payload_len;
     }
     
-    // FIN
-    if (writer().is_closed() && !fin_sent_ && available_window > 0) {
+    // FIN only last segment has FIN
+    if (writer().is_closed() && !fin_sent_ && available_window > 0 && payload_len < MAX_PAYLOAD) {
       msg.FIN = true;
       fin_sent_ = true;
     }

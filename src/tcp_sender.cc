@@ -25,8 +25,8 @@ uint64_t TCPSender::consecutive_retransmissions() const
 void TCPSender::push( const TransmitFunction& transmit )
 { 
   while (true) {
+    if (window_size_ <= sequence_numbers_in_flight()) break;
     uint64_t available_window = window_size_ - sequence_numbers_in_flight();
-    if (available_window == 0) break;
     
     TCPSenderMessage msg = make_empty_message();
     

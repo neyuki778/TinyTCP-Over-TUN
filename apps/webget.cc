@@ -16,7 +16,7 @@ void get_URL( const string& host, const string& path )
   // 1 connect host
   // 2 send get request
   // 3 read recv and print it
-  CS144TCPSocket socket;
+  TCPSocket socket;
   socket.connect( Address( host, "http" ) );
   string message;
   message += "GET " + path + " HTTP/1.1\r\n";
@@ -29,7 +29,7 @@ void get_URL( const string& host, const string& path )
     socket.read( buffer );
     cout << buffer;
   }
-  socket.wait_until_closed();
+  socket.close();
 }
 } // namespace
 

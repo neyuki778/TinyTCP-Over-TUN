@@ -24,12 +24,12 @@ void get_URL( const string& host, const string& path )
   message += "Connection: close\r\n";
   message += "\r\n";
   socket.write( message );
-  string response;
   while ( !socket.eof() ) {
-    socket.read( response );
+    string buffer;
+    socket.read( buffer );
+    cout << buffer;
   }
-  cout << response;
-  socket.close();
+  socket.wait_until_closed();
 }
 } // namespace
 

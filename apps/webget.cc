@@ -27,9 +27,9 @@ void get_URL( const string& host, const string& path )
   string response;
   while ( !socket.eof() ) {
     socket.read( response );
-    cout << response;
   }
-  socket.wait_until_closed();
+  cout << response;
+  socket.close();
 }
 } // namespace
 

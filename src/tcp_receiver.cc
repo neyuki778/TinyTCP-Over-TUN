@@ -29,7 +29,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
     FIN_ = true;
   }
 
-  uint64_t checkpoint = writer().bytes_pushed();
+  uint64_t checkpoint = writer().bytes_pushed() + 1;
   // balck magic
   uint64_t abs_seqno = message.seqno.unwrap( ISN_, checkpoint );
 

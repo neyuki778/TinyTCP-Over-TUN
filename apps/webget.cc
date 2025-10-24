@@ -29,7 +29,7 @@ void get_URL( const string& host, const string& path )
     socket.read( buffer );
     cout << buffer;
   }
-  socket.close();
+  socket.wait_until_closed();
 }
 } // namespace
 

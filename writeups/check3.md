@@ -22,7 +22,9 @@ measurements if applicable.]: []
 Report from the hands-on component: []
 
 Implementation Challenges:
-[]
+1. how seqno+ACK+RTO+flow-control works together building our tcp
+2. what is zero-window prebe and how to fix it
+3. what is RTO and how to build it
 
 Remaining Bugs:
 []

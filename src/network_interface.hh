@@ -73,7 +73,7 @@ private:
     EthernetAddress mac;
     size_t expiration_time_ms;
   };
-  
+
   // Human-readable name of the interface
   std::string name_;
 
@@ -89,4 +89,11 @@ private:
 
   // Datagrams that have been received
   std::queue<InternetDatagram> datagrams_received_ {};
+
+  // IP-MAC mapping
+  std::unordered_map<uint32_t, ArpEntry> arp_cache_;
+
+  // IPdatagrms in pending
+  std::unordered_map<uint32_t, std::queue<InternetDatagram>> pending_ip_datagrams_;
+
 };

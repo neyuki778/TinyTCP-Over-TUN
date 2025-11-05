@@ -91,16 +91,16 @@ private:
   std::queue<InternetDatagram> datagrams_received_ {};
 
   // IP-MAC mapping
-  std::unordered_map<uint32_t, ArpEntry> arp_cache_;
+  std::unordered_map<uint32_t, ArpEntry> arp_cache_ {};
 
   // IPdatagrms in pending
-  std::unordered_map<uint32_t, std::queue<InternetDatagram>> pending_ip_datagrams_;
+  std::unordered_map<uint32_t, std::queue<InternetDatagram>> pending_ip_datagrams_ {};
 
   // Do not send ARP requests repeatedly within 5 seconds(5000ms)
-  std::unordered_map<uint32_t, size_t> arp_request_times_;
+  std::unordered_map<uint32_t, size_t> arp_request_times_ {};
 
   // total time
-  size_t total_time_ms_;
+  size_t total_time_ms_ = 0;
 
   static constexpr size_t MAPPING_TTL_MS = 30000;
 

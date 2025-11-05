@@ -96,4 +96,13 @@ private:
   // IPdatagrms in pending
   std::unordered_map<uint32_t, std::queue<InternetDatagram>> pending_ip_datagrams_;
 
+  // Do not send ARP requests repeatedly within 5 seconds(5000ms)
+  std::unordered_map<uint32_t, size_t> arp_request_times_;
+
+  // total time
+  size_t total_time_ms_;
+
+  static constexpr size_t MAPPING_TTL_MS = 30000;
+
+  static constexpr size_t REQUEST_THROTTLE_MS = 5000;
 };

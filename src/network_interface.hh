@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <queue>
+#include <unordered_map>
 
 // A "network interface" that connects IP (the internet layer, or network layer)
 // with Ethernet (the network access layer, or link layer).
@@ -67,6 +68,12 @@ public:
   std::queue<InternetDatagram>& datagrams_received() { return datagrams_received_; }
 
 private:
+  // Helper struct
+  struct ArpEntry{
+    EthernetAddress mac;
+    size_t expiration_time_ms;
+  };
+  
   // Human-readable name of the interface
   std::string name_;
 

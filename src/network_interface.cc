@@ -45,5 +45,14 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void NetworkInterface::tick( const size_t ms_since_last_tick )
 {
-  debug( "unimplemented tick({}) called", ms_since_last_tick );
+  total_time_ms_ += ms_since_last_tick;
+  // delete expired mapping pair
+  for (auto it = arp_cache_.begin(); it != arp_cache_.end();){
+    const ArpEntry& entry = it->second;
+    if (total_time_ms_ >= entry.expiration_time_ms){
+      it = arp_cache_.erase(it);
+    }else{
+      ++it;
+    }
+  }
 }

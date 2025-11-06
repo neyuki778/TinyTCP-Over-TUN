@@ -35,7 +35,7 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
     const ArpEntry& entry = arp_cache_.at(ip);
     EthernetAddress dst_mac = entry.mac;
     EthernetFrame e_frame;
-    // capsulation InternetDatagram -> EthernetFrame and transmit it
+    // capsulate InternetDatagram -> EthernetFrame and transmit it
     e_frame.header.src = ethernet_address_;
     e_frame.header.dst = dst_mac;
     e_frame.header.type = EthernetHeader::TYPE_IPv4;
@@ -45,6 +45,34 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
     e_frame.payload = serializer.finish();
 
     transmit(e_frame);
+  }else{
+    uint32_t target_ip = next_hop.ipv4_numeric();
+
+    if (arp_request_times_.count(target_ip) and total_time_ms_ >= arp_request_times_.at(target_ip)){
+      return;
+    }
+    ARPMessage arp_msg;
+    EthernetFrame arp_frame;
+    Serializer serializer;
+
+    // init arp msg
+    arp_msg.opcode = ARPMessage::OPCODE_REQUEST;
+    arp_msg.sender_ethernet_address = ethernet_address_;
+    arp_msg.sender_ip_address = ip_address_.ipv4_numeric();
+    // arp_msg.target_ethernet_address = ETHERNET_BROADCAST;
+    arp_msg.target_ip_address = target_ip;
+    arp_msg.serialize(serializer);
+    
+    // init arp ethernet frame
+    arp_frame.payload = serializer.finish();
+    
+    arp_frame.header.src = ethernet_address_;
+    arp_frame.header.dst = ETHERNET_BROADCAST;
+    arp_frame.header.type = EthernetHeader::TYPE_ARP;
+
+    transmit(arp_frame);
+    pending_ip_datagrams_[target_ip].push(dgram);
+    arp_request_times_[target_ip] = total_time_ms_;
   }
 }
 

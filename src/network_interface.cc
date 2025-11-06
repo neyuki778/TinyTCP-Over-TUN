@@ -87,11 +87,50 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
 
   uint16_t type = frame.header.type;
   assert((type == EthernetHeader::TYPE_ARP or type == EthernetHeader::TYPE_IPv4) && "Type error!");
+  Parser paser(frame.payload);
+
   if (type == EthernetHeader::TYPE_IPv4){
     InternetDatagram dgram;
-    Parser paser(frame.payload);
     dgram.parse(paser);
     datagrams_received_.push(dgram);
+  }else{
+    ARPMessage arp_msg;
+    arp_msg.parse(paser);
+    // learn
+    EthernetAddress mac = arp_msg.sender_ethernet_address;
+    uint32_t ip = arp_msg.sender_ip_address;
+    arp_cache_[ip] = {mac, total_time_ms_ + MAPPING_TTL_MS};
+    // check should send
+    if (pending_ip_datagrams_.count(ip)){
+      auto& pending_queue = pending_ip_datagrams_.at( ip );
+      while ( !pending_queue.empty() ) {
+        InternetDatagram pending_dgram = pending_queue.front();
+        pending_queue.pop();
+        send_datagram( pending_dgram, Address::from_ipv4_numeric( ip ) );
+      }
+      pending_ip_datagrams_.erase( ip ); 
+    }
+    // reponse if need
+    if ( arp_msg.opcode == ARPMessage::OPCODE_REQUEST 
+         && arp_msg.target_ip_address == ip_address_.ipv4_numeric() ) {
+      ARPMessage reply;
+      reply.opcode = ARPMessage::OPCODE_REPLY;
+      reply.sender_ethernet_address = ethernet_address_;
+      reply.sender_ip_address = ip_address_.ipv4_numeric();
+      reply.target_ethernet_address = arp_msg.sender_ethernet_address;
+      reply.target_ip_address = arp_msg.sender_ip_address;
+      
+      EthernetFrame reply_frame;
+      reply_frame.header.src = ethernet_address_;
+      reply_frame.header.dst = arp_msg.sender_ethernet_address;
+      reply_frame.header.type = EthernetHeader::TYPE_ARP;
+      
+      Serializer serializer;
+      reply.serialize( serializer );
+      reply_frame.payload = serializer.finish();
+      
+      transmit( reply_frame );
+    }
   }
 }
 

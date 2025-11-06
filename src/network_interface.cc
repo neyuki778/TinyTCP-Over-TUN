@@ -1,4 +1,5 @@
 #include <iostream>
+#include<cassert>
 
 #include "arp_message.hh"
 #include "debug.hh"
@@ -79,7 +80,19 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 //! \param[in] frame the incoming Ethernet frame
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
-  
+  EthernetAddress dst = frame.header.dst;
+  if (dst != ethernet_address_ and dst != ETHERNET_BROADCAST){
+    return;
+  }
+
+  uint16_t type = frame.header.type;
+  assert((type == EthernetHeader::TYPE_ARP or type == EthernetHeader::TYPE_IPv4) && "Type error!");
+  if (type == EthernetHeader::TYPE_IPv4){
+    InternetDatagram dgram;
+    Parser paser(frame.payload);
+    dgram.parse(paser);
+    datagrams_received_.push(dgram);
+  }
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method

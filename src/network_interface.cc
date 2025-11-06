@@ -72,15 +72,14 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 
     transmit(arp_frame);
     pending_ip_datagrams_[target_ip].push(dgram);
-    arp_request_times_[target_ip] = total_time_ms_;
+    arp_request_times_[target_ip] = total_time_ms_ + REQUEST_THROTTLE_MS;
   }
 }
 
 //! \param[in] frame the incoming Ethernet frame
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
-  debug( "unimplemented recv_frame called" );
-  (void)frame;
+  
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method

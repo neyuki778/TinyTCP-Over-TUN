@@ -49,31 +49,31 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
   }else{
     uint32_t target_ip = next_hop.ipv4_numeric();
 
-    if (arp_request_times_.count(target_ip) and total_time_ms_ < arp_request_times_.at(target_ip)){
-      return;
+    if (!arp_request_times_.count(target_ip) or total_time_ms_ >= arp_request_times_.at(target_ip)){
+    
+      ARPMessage arp_msg;
+      EthernetFrame arp_frame;
+      Serializer serializer;
+
+      // init arp msg
+      arp_msg.opcode = ARPMessage::OPCODE_REQUEST;
+      arp_msg.sender_ethernet_address = ethernet_address_;
+      arp_msg.sender_ip_address = ip_address_.ipv4_numeric();
+      // arp_msg.target_ethernet_address = ETHERNET_BROADCAST;
+      arp_msg.target_ip_address = target_ip;
+      arp_msg.serialize(serializer);
+      
+      // init arp ethernet frame
+      arp_frame.payload = serializer.finish();
+      
+      arp_frame.header.src = ethernet_address_;
+      arp_frame.header.dst = ETHERNET_BROADCAST;
+      arp_frame.header.type = EthernetHeader::TYPE_ARP;
+
+      transmit(arp_frame);
+      arp_request_times_[target_ip] = total_time_ms_ + REQUEST_THROTTLE_MS;
     }
-    ARPMessage arp_msg;
-    EthernetFrame arp_frame;
-    Serializer serializer;
-
-    // init arp msg
-    arp_msg.opcode = ARPMessage::OPCODE_REQUEST;
-    arp_msg.sender_ethernet_address = ethernet_address_;
-    arp_msg.sender_ip_address = ip_address_.ipv4_numeric();
-    // arp_msg.target_ethernet_address = ETHERNET_BROADCAST;
-    arp_msg.target_ip_address = target_ip;
-    arp_msg.serialize(serializer);
-    
-    // init arp ethernet frame
-    arp_frame.payload = serializer.finish();
-    
-    arp_frame.header.src = ethernet_address_;
-    arp_frame.header.dst = ETHERNET_BROADCAST;
-    arp_frame.header.type = EthernetHeader::TYPE_ARP;
-
-    transmit(arp_frame);
     pending_ip_datagrams_[target_ip].push(dgram);
-    arp_request_times_[target_ip] = total_time_ms_ + REQUEST_THROTTLE_MS;
   }
 }
 
@@ -103,22 +103,12 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
     // check should send
     if (pending_ip_datagrams_.count(ip)){
       auto& pending_queue = pending_ip_datagrams_.at( ip );
-      while (!pending_queue.empty()){
-        InternetDatagram dgram_to_send = pending_queue.front();
+      while ( !pending_queue.empty() ) {
+        InternetDatagram pending_dgram = pending_queue.back();
         pending_queue.pop();
-        EthernetFrame e_frame;
-
-        e_frame.header.src = ethernet_address_;
-        e_frame.header.dst = mac;
-        e_frame.header.type = EthernetHeader::TYPE_IPv4;
-
-        Serializer s;
-        dgram_to_send.serialize( s );
-        e_frame.payload = s.finish();
-
-        transmit( e_frame );
+        send_datagram( pending_dgram, Address::from_ipv4_numeric( ip ) );
       }
-      pending_ip_datagrams_.erase( ip );
+      pending_ip_datagrams_.erase( ip ); 
     }
     // reponse if need
     if ( arp_msg.opcode == ARPMessage::OPCODE_REQUEST 

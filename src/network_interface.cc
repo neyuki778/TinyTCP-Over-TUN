@@ -49,7 +49,7 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
   }else{
     uint32_t target_ip = next_hop.ipv4_numeric();
 
-    if (arp_request_times_.count(target_ip) and total_time_ms_ >= arp_request_times_.at(target_ip)){
+    if (arp_request_times_.count(target_ip) and total_time_ms_ < arp_request_times_.at(target_ip)){
       return;
     }
     ARPMessage arp_msg;

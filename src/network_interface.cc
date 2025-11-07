@@ -104,7 +104,7 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
     if (pending_ip_datagrams_.count(ip)){
       auto& pending_queue = pending_ip_datagrams_.at( ip );
       while ( !pending_queue.empty() ) {
-        InternetDatagram pending_dgram = pending_queue.front();
+        InternetDatagram pending_dgram = pending_queue.back();
         pending_queue.pop();
         send_datagram( pending_dgram, Address::from_ipv4_numeric( ip ) );
       }

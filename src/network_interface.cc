@@ -103,12 +103,22 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
     // check should send
     if (pending_ip_datagrams_.count(ip)){
       auto& pending_queue = pending_ip_datagrams_.at( ip );
-      while ( !pending_queue.empty() ) {
-        InternetDatagram pending_dgram = pending_queue.back();
+      while (!pending_queue.empty()){
+        InternetDatagram dgram_to_send = pending_queue.front();
         pending_queue.pop();
-        send_datagram( pending_dgram, Address::from_ipv4_numeric( ip ) );
+        EthernetFrame e_frame;
+
+        e_frame.header.src = ethernet_address_;
+        e_frame.header.dst = mac;
+        e_frame.header.type = EthernetHeader::TYPE_IPv4;
+
+        Serializer s;
+        dgram_to_send.serialize( s );
+        e_frame.payload = s.finish();
+
+        transmit( e_frame );
       }
-      pending_ip_datagrams_.erase( ip ); 
+      pending_ip_datagrams_.erase( ip );
     }
     // reponse if need
     if ( arp_msg.opcode == ARPMessage::OPCODE_REQUEST 

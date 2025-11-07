@@ -50,7 +50,9 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
     uint32_t target_ip = next_hop.ipv4_numeric();
 
     if (!arp_request_times_.count(target_ip) or total_time_ms_ >= arp_request_times_.at(target_ip)){
-    
+      if (arp_request_times_.count(target_ip)){
+        arp_request_times_.erase(target_ip);
+      }
       ARPMessage arp_msg;
       EthernetFrame arp_frame;
       Serializer serializer;

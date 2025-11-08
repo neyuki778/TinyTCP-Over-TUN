@@ -45,5 +45,5 @@ private:
         : route_prefix(prefix), prefix_length(len), next_hop(hop), interface_num(num) {}
   };
   // A vec for route storage
-  std::vector<RouteEntry> routing_table_;
+  std::vector<RouteEntry> routing_table_ {};
 };

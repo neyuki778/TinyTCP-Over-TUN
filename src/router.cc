@@ -16,11 +16,7 @@ void Router::add_route( const uint32_t route_prefix,
                         const optional<Address> next_hop,
                         const size_t interface_num )
 {
-  cerr << "DEBUG: adding route " << Address::from_ipv4_numeric( route_prefix ).ip() << "/"
-       << static_cast<int>( prefix_length ) << " => " << ( next_hop.has_value() ? next_hop->ip() : "(direct)" )
-       << " on interface " << interface_num << "\n";
-
-  debug( "unimplemented add_route() called" );
+  routing_table_.emplace_back(route_prefix, prefix_length, next_hop, interface_num);
 }
 
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.

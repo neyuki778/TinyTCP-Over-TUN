@@ -44,4 +44,6 @@ private:
     RouteEntry(uint32_t prefix, uint8_t len, std::optional<Address> hop, size_t num)
         : route_prefix(prefix), prefix_length(len), next_hop(hop), interface_num(num) {}
   };
+  // A vec for route storage
+  std::vector<RouteEntry> routing_table_;
 };

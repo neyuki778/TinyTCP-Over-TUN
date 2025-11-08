@@ -52,7 +52,12 @@ void Router::route()
       if (matching_routing_num >= 0 and matching_routing_max_len > 0){
         RouteEntry& matching_routing_rule = routing_table_.at(matching_routing_num);
         shared_ptr<NetworkInterface> target_iface = interface(matching_routing_rule.interface_num);
-        target_iface->send_datagram(dgram, Address::from_ipv4_numeric(msg_dst_ip));
+        Address addr = Address::from_ipv4_numeric(msg_dst_ip);
+        // if next has not value, this router is the last router
+        if (matching_routing_rule.next_hop.has_value()){
+          addr = matching_routing_rule.next_hop.value();
+        }
+        target_iface->send_datagram(dgram, addr);
       }
     }
   }

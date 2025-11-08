@@ -27,11 +27,11 @@ void Router::route()
     while (!dgram_queue.empty()){
       InternetDatagram dgram = move(dgram_queue.front());
       dgram_queue.pop();
-      dgram.header.ttl --;
       // check TTL
-      if (dgram.header.ttl <= 0){
+      if (dgram.header.ttl <= 1){
         continue;
       }
+      dgram.header.ttl --;
       // match the routing rule with the highest matching degree
       // drop dgram if no matching routing rule there
       uint16_t matching_routing_max_len = 0;

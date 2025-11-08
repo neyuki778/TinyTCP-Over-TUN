@@ -22,5 +22,15 @@ void Router::add_route( const uint32_t route_prefix,
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
-  debug( "unimplemented route() called" );
+  for (auto& iface : interfaces_){
+    auto& dgram_queue = iface->datagrams_received();
+    while (!dgram_queue.empty()){
+      auto dgram = move(dgram_queue.front());
+      dgram_queue.pop();
+      // check TTL
+      if (dgram.header.ttl == 0 or dgram.header.ttl == 1){
+        continue;
+      }
+    }
+  }
 }

@@ -42,14 +42,16 @@ void Router::route()
       for (auto& route : routing_table_){
         uint8_t& prefix_len = route.prefix_length;
         uint32_t bit_mask = (prefix_len == 0) ? 0: (~0U << (32 - prefix_len));
-        if ((bit_mask & route.route_prefix) == (bit_mask & msg_dst_ip) and static_cast<uint16_t>(prefix_len) > matching_routing_max_len){
+        if ((bit_mask & route.route_prefix) == (bit_mask & msg_dst_ip)){
+          if (matching_routing_num == -1 or static_cast<uint16_t>(prefix_len) > matching_routing_max_len){
           matching_routing_max_len = prefix_len;
           matching_routing_num = i;
+          }
         }
         i++;
       }
       // check matching result, send if matched
-      if (matching_routing_num >= 0 and matching_routing_max_len > 0){
+      if (matching_routing_num >= 0){
         RouteEntry& matching_routing_rule = routing_table_.at(matching_routing_num);
         shared_ptr<NetworkInterface> target_iface = interface(matching_routing_rule.interface_num);
         Address addr = Address::from_ipv4_numeric(msg_dst_ip);

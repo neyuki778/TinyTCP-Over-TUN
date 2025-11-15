@@ -1,0 +1,30 @@
+# 使用一个现代的版本
+version: '3.8'
+
+# "services" 指我们要运行的容器
+services:
+  # "dev" 是我们给这个服务起的名字，可以随便改
+  dev:
+    # 告诉 Compose，镜像不是现成的，需要它自己去构建
+    # build: . 表示 "使用当前目录的 Dockerfile 来构建"
+    build: .
+
+    # 可选：给构建好的镜像起个名字，和我们之前 -t compiler-lab 一样
+    image: CS144-computer-networks-dev
+
+    # 挂载卷 (实现实时同步)
+    # - .:/home/Link/project 等同于 -v "$(pwd):/home/Link/project"
+    volumes:
+      - .:/home/Link/project
+
+    # 设置工作目录
+    working_dir: /home/Link/project
+
+    # 保持 STDIN 打开，等同于 -i
+    stdin_open: true 
+
+    # 分配一个 TTY，等同于 -t
+    tty: true
+
+    # 设置容器启动后执行的命令
+    # docker-compose run --rm dev /bin/bash

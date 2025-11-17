@@ -85,98 +85,6 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   }
 }
 
-void place_string_efficiently(
-    vector<char>& container,
-    vector<bool>& present,
-    std::string data,
-    uint64_t start_index)
-{
-    uint64_t data_len = data.length();
-    if (start_index >= container.size()) {
-        return;
-    }
-
-    uint64_t remaining_capacity = container.size() - start_index;
-    uint64_t actual_len = std::min(data_len, remaining_capacity);
-    if (actual_len == 0) return;
-
-    // copy bytes (including zero bytes) and mark presence
-    for (uint64_t i = 0; i < actual_len; ++i) {
-        container[start_index + i] = data[i];
-        present[start_index + i] = true;
-    }
-}
-
-void try_close(bool recv, uint64_t idx, Writer& writer){
-  if (recv and idx == writer.bytes_pushed()){
-    writer.close();
-  }
-}
-
-void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
-                               std::vector<bool>& unassembled_present,
-                               std::string& data_to_push,
-                               Writer& writer,
-                               uint64_t& first_unassembled_index)
-{
-
-  if (!data_to_push.empty()) {
-    uint64_t pushed_len = data_to_push.length();
-    writer.push(data_to_push);
-    first_unassembled_index += pushed_len;
-    data_to_push.clear();
-
-    if ( pushed_len > 0 && !unassembled_bytes.empty() ) {
-      uint64_t num_to_erase = std::min( pushed_len, unassembled_bytes.size() );
-      unassembled_bytes.erase( unassembled_bytes.begin(), unassembled_bytes.begin() + num_to_erase );
-      unassembled_present.erase( unassembled_present.begin(), unassembled_present.begin() + num_to_erase );
-    }
-  }
-
-  if (unassembled_bytes.empty()) {
-    return;
-  }
-
-  // find continuous data
-  uint64_t it = 0;
-  string additional_data;
-  for (; it < unassembled_bytes.size(); it++) {
-    if (unassembled_present[it]) {
-      additional_data += unassembled_bytes[it];
-    } else {
-      break;
-    }
-  }
-
-  if (it > 0) {
-    if (!additional_data.empty()) {
-      writer.push(additional_data);
-      first_unassembled_index += additional_data.length();
-    }
-    
-    unassembled_bytes.erase(unassembled_bytes.begin(), unassembled_bytes.begin() + it);
-    unassembled_present.erase(unassembled_present.begin(), unassembled_present.begin() + it);
-    
-    // point to pass test9
-    uint64_t new_capacity = writer.available_capacity();
-    if (unassembled_bytes.size() < new_capacity) {
-      unassembled_bytes.resize(new_capacity);
-      unassembled_present.resize(new_capacity, false);
-    }
-  }
-}
-
-// How many bytes are stored in the Reassembler itself?
-// This function is for testing only; don't add extra state to support it.
-uint64_t Reassembler::count_bytes_pending() const
-{
-  uint64_t cnt = 0;
-  for (bool b : unassembled_present) {
-    if (b) ++cnt;
-  }
-  return cnt;
-}
-
 ```
 
 ## 基准表现:
@@ -206,7 +114,7 @@ uint64_t Reassembler::count_bytes_pending() const
         Reassembler throughput (10x overlap):  4.13 Gbit/s
 18/18 Test #40: reassembler_speed_test ...........   Passed    0.43 sec
 ```
-其中reassembler_seq的表现非常差劲, perf结果:
+### 1. 其中reassembler_seq的表现非常差劲, perf结果:
 
 ```
 99.48% 0.00% reassembler_seq reassembler_seq [.] _start
@@ -234,15 +142,54 @@ uint64_t Reassembler::count_bytes_pending() const
 0.99% 0.00% reassembler_seq [kernel.kallsyms] [k] asm_sysvec_apic_timer_interrupt
 
 ```
-## 分析
 
-程序性能瓶颈在于使用了 std::vector<bool> 并且频繁在头部进行 erase 操作。98% 的 CPU 时间 都消耗在 try_push_assembled_bytes 函数中对 unassembled_present (即 std::vector<bool>) 的 erase 操作上。这导致了大量的位操作（Bit manipulation）和内存搬运，将原本应该是线性的复杂度变成了平方级复杂度 $O(N^2)$。
+#### 分析
+`Reassembler::insert` 的总开销仍然被 `try_push_assembled_bytes` 和 `place_string_efficiently` 主导，尤其是它们内部对 `std::vector<char>`、`std::vector<uint8_t>` 的前端 `erase`、`resize` 以及 `std::string` 拷贝。reassembler_win 测试会生成 32×128 个分段、每段最长 2 KB，并且顺序被打乱、存在大量重叠，所以每次插入都会造成多次 `memmove`。
 
-## 尝试解决
+### 2. reassembler_win表现差
 
-### 1. vector\<bool>效率太低, 尝试使用vector\<uint8_t>
+```
++   99.40%     0.00%  reassembler_win  reassembler_win       [.] _start
++   99.40%     0.00%  reassembler_win  libc.so.6             [.] __libc_start_main@@GLIBC_2.34
++   99.40%     0.00%  reassembler_win  libc.so.6             [.] __libc_start_call_main
++   99.34%     0.06%  reassembler_win  reassembler_win       [.] main
++   77.63%     0.12%  reassembler_win  reassembler_win       [.] TestHarness<Reassembler>::execute(TestStep<Reassembler> const&)
++   69.28%     0.00%  reassembler_win  reassembler_win       [.] Insert::execute(Reassembler&) const
++   69.16%     0.06%  reassembler_win  reassembler_win       [.] Reassembler::insert(unsigned long, std::__cxx11::basic_string<ch
++   48.26%     6.16%  reassembler_win  reassembler_win       [.] try_push_assembled_bytes(std::vector<char, std::allocator<char>
++   33.15%     2.78%  reassembler_win  reassembler_win       [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::al
++   29.82%     3.56%  reassembler_win  reassembler_win       [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::al
++   17.74%     1.67%  reassembler_win  reassembler_win       [.] void std::generate<__gnu_cxx::__normal_iterator<char*, std::__cx
++   14.67%     6.27%  reassembler_win  reassembler_win       [.] place_string_efficiently(std::vector<char, std::allocator<char>
++   11.29%     0.43%  reassembler_win  reassembler_win       [.] main::{lambda()#1}::operator()() const
++   11.11%     2.41%  reassembler_win  reassembler_win       [.] std::linear_congruential_engine<unsigned long, 16807ul, 0ul, 214
++   10.82%     1.52%  reassembler_win  reassembler_win       [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::al
++    9.66%     2.45%  reassembler_win  reassembler_win       [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::al
++    9.32%     2.09%  reassembler_win  reassembler_win       [.] unsigned long std::__detail::__mod<unsigned long, 2147483647ul,
++    9.06%     0.93%  reassembler_win  reassembler_win       [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::al
++    7.24%     0.74%  reassembler_win  [kernel.kallsyms]     [k] asm_exc_page_fault
++    7.17%     7.10%  reassembler_win  reassembler_win       [.] std::__detail::_Mod<unsigned long, 2147483647ul, 16807ul, 0ul, t
++    7.15%     1.46%  reassembler_win  reassembler_win       [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::al
++    6.80%     2.35%  reassembler_win  reassembler_win       [.] std::__ptr_traits_ptr_to<char const*, char const, false>::pointe
++    6.31%     0.29%  reassembler_win  [kernel.kallsyms]     [k] exc_page_fault
++    5.95%     0.06%  reassembler_win  [kernel.kallsyms]     [k] do_user_addr_fault
++    5.69%     2.47%  reassembler_win  libc.so.6             [.] __memmove_avx_unaligned_erms
++    5.64%     0.12%  reassembler_win  [kernel.kallsyms]     [k] handle_mm_fault
++    5.46%     0.56%  reassembler_win  [kernel.kallsyms]     [k] __handle_mm_fault
++    5.45%     0.06%  reassembler_win  reassembler_win       [.] Action<Reassembler>::str[abi:cxx11]() const
+```
 
-表现:
+#### 分析
+
+程序性能瓶颈在于使用了 `std::vector<bool>` 并且频繁在头部进行 `erase` 操作。98% 的 CPU 时间 都消耗在 `try_push_assembled_bytes` 函数中对 `unassembled_present` (即 `std::vector<bool>`) 的 `erase` 操作上。这导致了大量的位操作和内存搬运，将原本应该是线性的复杂度变成了平方级复杂度 $O(N^2)$。
+
+## 优化
+
+### 1. 尝试解决`reassembler_seq`
+
+#### vector\<bool>效率太低, 尝试使用vector\<uint8_t>
+
+#### 优化后表现:
 ```
 16/18 Test #38: compile with optimization ........   Passed    0.25 sec
       Start 39: byte_stream_speed_test
@@ -270,3 +217,23 @@ reassembler_seq耗时从1.71 sec -> 0.05 sec
 |  **复杂度常数**   |            极小             |        巨大 (由于位操作指令多)         |
 
 但是吞吐量几乎没有变化, 还有进一步优化空间
+
+### 2. 尝试解决`reassembler_win`
+#### 这次要彻底重构reassenbler的数据结构, 避免在 vector 头部删除元素, 这将同时优化reassembler_win以及整体吞吐量
+
+重构要点：将 `Reassembler` 改成“环形缓冲 + 区间 map”组合方案。环形缓冲（大小为 capacity+1）用 `front_pos_` 追踪 `first_unassembled_index_`，避免了原来频繁的 `erase/memmove`；`filled_segments_` 记录任意乱序到达的 `[start, end)` 区间，插入时只需合并重叠片段。两者结合后，组装流程基本只做 `O(写入数据量)` 的拷贝和 `map` 的 `O(log n)` 操作，缓冲区内数据推进时只是移动 `front_pos_`。
+
+#### 优化后表现
+```
+16/18 Test #38: compile with optimization ........   Passed    0.22 sec
+      Start 39: byte_stream_speed_test
+        ByteStream throughput (pop length 4096):  8.95 Gbit/s
+        ByteStream throughput (pop length 128):   2.10 Gbit/s
+        ByteStream throughput (pop length 32):    0.62 Gbit/s
+17/18 Test #39: byte_stream_speed_test ...........   Passed    0.45 sec
+      Start 40: reassembler_speed_test
+        Reassembler throughput (no overlap):  70.80 Gbit/s
+        Reassembler throughput (10x overlap): 11.10 Gbit/s
+18/18 Test #40: reassembler_speed_test ...........   Passed    0.38 sec
+```
+其中`Reassembler throughput (no overlap)`和`Reassembler throughput (10x overlap)`提升约**300%**!

@@ -61,5 +61,5 @@ private:
 
   // uint64_t unassembled_base_index_;
   std::vector<char> unassembled_bytes;
-  std::vector<bool> unassembled_present;
+  std::vector<uint8_t> unassembled_present;
 };

@@ -6,14 +6,14 @@
 using namespace std;
 
 void place_string_efficiently(std::vector<char>& container,
-                              std::vector<bool>& present,
+                              std::vector<uint8_t>& present,
                               std::string data,
                               uint64_t start_index);
 
 void try_close(bool recv, uint64_t idx, Writer& writer);
 
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
-                               std::vector<bool>& unassembled_present,
+                               std::vector<uint8_t>& unassembled_present,
                                std::string& data_to_push,
                                Writer& writer,
                                uint64_t& first_unassembled_index); 
@@ -51,10 +51,10 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   // init reassembler if need or reshape
   if ( unassembled_bytes.empty() && available_capacity > 0 ) {
     unassembled_bytes.resize(available_capacity);
-    unassembled_present.assign(available_capacity, false);
+    unassembled_present.assign(available_capacity, 0);
   } else if (unassembled_bytes.size() != available_capacity && available_capacity > 0) {
     unassembled_bytes.resize(available_capacity);
-    unassembled_present.resize(available_capacity, false);
+    unassembled_present.resize(available_capacity, 0);
   }
 
   // case1: all data is legal
@@ -85,7 +85,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
 
 void place_string_efficiently(
     vector<char>& container,
-    vector<bool>& present,
+    vector<uint8_t>& present,
     std::string data,
     uint64_t start_index)
 {
@@ -101,7 +101,7 @@ void place_string_efficiently(
     // copy bytes (including zero bytes) and mark presence
     for (uint64_t i = 0; i < actual_len; ++i) {
         container[start_index + i] = data[i];
-        present[start_index + i] = true;
+        present[start_index + i] = 1;
     }
 }
 
@@ -112,7 +112,7 @@ void try_close(bool recv, uint64_t idx, Writer& writer){
 }
 
 void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
-                               std::vector<bool>& unassembled_present,
+                               std::vector<uint8_t>& unassembled_present,
                                std::string& data_to_push,
                                Writer& writer,
                                uint64_t& first_unassembled_index)
@@ -159,7 +159,7 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
     uint64_t new_capacity = writer.available_capacity();
     if (unassembled_bytes.size() < new_capacity) {
       unassembled_bytes.resize(new_capacity);
-      unassembled_present.resize(new_capacity, false);
+      unassembled_present.resize(new_capacity, 0);
     }
   }
 }
@@ -169,7 +169,7 @@ void try_push_assembled_bytes(std::vector<char>& unassembled_bytes,
 uint64_t Reassembler::count_bytes_pending() const
 {
   uint64_t cnt = 0;
-  for (bool b : unassembled_present) {
+  for (auto b : unassembled_present) {
     if (b) ++cnt;
   }
   return cnt;

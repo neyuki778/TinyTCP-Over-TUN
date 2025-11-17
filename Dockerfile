@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt install git cmake gdb build-essential clang \
 clang-tidy clang-format gcc-doc pkg-config glibc-doc tcpdump tshark -y
 
-# 4. [推荐] 创建一个非 root 用户，避免权限问题
+# 4. [推荐] 创建一个非 root 用户，避免权限问题(名字可以随便起)
 RUN useradd -ms /bin/bash Link
 USER Link
 

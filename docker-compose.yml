@@ -5,12 +5,11 @@ version: '3.8'
 services:
   # "dev" 是我们给这个服务起的名字，可以随便改
   dev:
-    # 告诉 Compose，镜像不是现成的，需要它自己去构建
     # build: . 表示 "使用当前目录的 Dockerfile 来构建"
     build: .
 
     # 可选：给构建好的镜像起个名字，和我们之前 -t compiler-lab 一样
-    image: CS144-computer-networks-dev
+    image: tinytcp-over-linux-tun
 
     # 挂载卷 (实现实时同步)
     # - .:/home/Link/project 等同于 -v "$(pwd):/home/Link/project"

@@ -1,7 +1,10 @@
 #pragma once
 
 #include "byte_stream.hh"
-#include<vector>
+
+#include <cstdint>
+#include <map>
+#include <vector>
 
 class Reassembler
 {
@@ -9,14 +12,8 @@ public:
   // Construct Reassembler to write into given ByteStream.
   explicit Reassembler( ByteStream&& output )
     : output_( std::move( output ) ),
-      first_unpopped_index_( 0 ),
-      first_unassembled_index_( 0 ),
-      first_unacceptable_index_( 0 ),
-      eof_index_( 0 ),
-      eof_received_( false ),
-      // unassembled_base_index_( 0 ),
-      unassembled_bytes(),
-      unassembled_present()
+      ring_buffer_(),
+      filled_segments_()
   {}
   /*
    * Insert a new substring to be reassembled into a ByteStream.
@@ -53,13 +50,24 @@ public:
 
 private:
   ByteStream output_;
-  uint64_t first_unpopped_index_;
-  uint64_t first_unassembled_index_;
-  uint64_t first_unacceptable_index_;
-  uint64_t eof_index_;
-  bool eof_received_;
 
-  // uint64_t unassembled_base_index_;
-  std::vector<char> unassembled_bytes;
-  std::vector<uint8_t> unassembled_present;
+  uint64_t first_unpopped_index_{0};      // 已弹出到 ByteStream 的最小绝对下标
+  uint64_t first_unassembled_index_{0};   // 下一块必须写入 ByteStream 的绝对下标
+  uint64_t first_unacceptable_index_{0};  // 超出窗口的第一位置（丢弃超过它的数据）
+  uint64_t eof_index_{0};                 // EOF 出现的位置
+  bool eof_received_{false};
+
+  bool ring_initialized_{false};          // 是否已经按照容量初始化环形缓冲区
+  uint64_t total_capacity_{0};            // 当前窗口（缓冲+可写）容量
+  size_t ring_size_{0};                   // 环形缓冲区实际大小（capacity+1）
+  size_t front_pos_{0};                   // 环形缓冲区对应 first_unassembled_index_ 的位置
+  std::vector<char> ring_buffer_;         // 存放连续已知字节的环形缓冲区
+
+  std::map<uint64_t, uint64_t> filled_segments_;  // 保存 [start,end) 的已知区间，按绝对下标排序
+  uint64_t pending_bytes_{0};                     // 仍未写入 ByteStream 的字节总数
+
+  void initialize_ring(uint64_t capacity);                       // 按当前容量创建环形缓存
+  void copy_into_ring(uint64_t absolute_index, const char* data, size_t length); // 将数据映射到环形缓冲区
+  void add_interval(uint64_t start, uint64_t end);               // 在 map 中加入并合并区间
+  void flush_contiguous(Writer& writer);                         // 将连续可写数据推入 ByteStream
 };

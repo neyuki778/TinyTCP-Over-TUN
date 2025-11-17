@@ -9,11 +9,7 @@ using namespace std;
 // This function is for testing only; don't add extra state to support it.
 uint64_t TCPSender::sequence_numbers_in_flight() const
 {
-  uint64_t cnt = 0;
-  for (auto &it : outstanding_seqno_){
-    cnt += it.sequence_length();
-  }
-  return cnt;
+  return flight_numbers_length;
 }
 
 // This function is for testing only; don't add extra state to support it.
@@ -72,6 +68,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     transmit(msg);
     outstanding_seqno_.emplace_back(msg);
     next_seqno_ += msg.sequence_length();
+    flight_numbers_length += msg.sequence_length();
     is_timer_runnning_ = true;
     
     if (msg.payload.size() > 0) {
@@ -106,6 +103,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
       auto &it = outstanding_seqno_.front();
       // how to confirm “it”?
       if (it.seqno.unwrap(isn_, next_seqno_) + it.sequence_length() <= new_ackno){
+        flight_numbers_length -= outstanding_seqno_.front().sequence_length();
         outstanding_seqno_.pop_front();
         // reset rto state
         if (!reset){

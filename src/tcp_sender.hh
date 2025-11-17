@@ -59,7 +59,7 @@ private:
   uint16_t window_size_;
 
   std::deque<TCPSenderMessage> outstanding_seqno_;
-  uint64_t flight_numbers_length;
+  uint64_t flight_numbers_length{0};
 
   // retransmission time out
   uint64_t time_elapsed_;

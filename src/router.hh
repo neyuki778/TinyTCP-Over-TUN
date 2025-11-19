@@ -45,5 +45,11 @@ private:
         : route_prefix(prefix), prefix_length(len), next_hop(hop), interface_num(num) {}
   };
   // A vec for route storage
-  std::vector<RouteEntry> routing_table_ {};
+  // Trie Node structure for LPM
+  struct TrieNode {
+    std::array<std::unique_ptr<TrieNode>, 2> children {};
+    std::optional<RouteEntry> route_entry {};
+  };
+
+  std::unique_ptr<TrieNode> trie_root_ { std::make_unique<TrieNode>() };
 };

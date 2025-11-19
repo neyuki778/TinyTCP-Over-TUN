@@ -16,50 +16,67 @@ void Router::add_route( const uint32_t route_prefix,
                         const optional<Address> next_hop,
                         const size_t interface_num )
 {
-  routing_table_.emplace_back(route_prefix, prefix_length, next_hop, interface_num);
+  TrieNode* current = trie_root_.get();
+  for ( uint8_t i = 0; i < prefix_length; ++i ) {
+    // Extract the bit at the current position (from MSB to LSB)
+    // 31 - i gives the shift amount to get the bit at index i (0-indexed from MSB)
+    uint8_t bit = ( route_prefix >> ( 31 - i ) ) & 1;
+
+    if ( !current->children[bit] ) {
+      current->children[bit] = make_unique<TrieNode>();
+    }
+    current = current->children[bit].get();
+  }
+  // Store the route at the node corresponding to the prefix
+  // If a route already exists for this exact prefix, we overwrite it (standard behavior)
+  current->route_entry = RouteEntry( route_prefix, prefix_length, next_hop, interface_num );
 }
 
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
-  for (shared_ptr<NetworkInterface>& iface : interfaces_){
+  for ( shared_ptr<NetworkInterface>& iface : interfaces_ ) {
     auto& dgram_queue = iface->datagrams_received();
-    while (!dgram_queue.empty()){
-      InternetDatagram dgram = move(dgram_queue.front());
+    while ( !dgram_queue.empty() ) {
+      InternetDatagram dgram = move( dgram_queue.front() );
       dgram_queue.pop();
+
       // check TTL
-      if (dgram.header.ttl <= 1){
+      if ( dgram.header.ttl <= 1 ) {
         continue;
       }
-      dgram.header.ttl --;
-      // match the routing rule with the highest matching degree
-      // drop dgram if no matching routing rule there
-      uint16_t matching_routing_max_len = 0;
-      uint32_t msg_dst_ip = dgram.header.dst;
-      int matching_routing_num = -1;
-      int i = 0;
-      // longest-prefix match
-      for (auto& route : routing_table_){
-        uint8_t& prefix_len = route.prefix_length;
-        uint32_t bit_mask = (prefix_len == 0) ? 0: (~0U << (32 - prefix_len));
-        if ((bit_mask & route.route_prefix) == (bit_mask & msg_dst_ip)){
-          if (matching_routing_num == -1 or static_cast<uint16_t>(prefix_len) > matching_routing_max_len){
-          matching_routing_max_len = prefix_len;
-          matching_routing_num = i;
-          }
-        }
-        i++;
+      dgram.header.ttl--;
+
+      // LPM using Trie
+      uint32_t dst_ip = dgram.header.dst;
+      TrieNode* current = trie_root_.get();
+      const RouteEntry* best_match = nullptr;
+
+      // Check for default route (root node)
+      if ( current->route_entry.has_value() ) {
+        best_match = &current->route_entry.value();
       }
-      // check matching result, send if matched
-      if (matching_routing_num >= 0){
-        RouteEntry& matching_routing_rule = routing_table_.at(matching_routing_num);
-        shared_ptr<NetworkInterface> target_iface = interface(matching_routing_rule.interface_num);
-        Address addr = Address::from_ipv4_numeric(msg_dst_ip);
-        // if next has not value, this router is the last router
-        if (matching_routing_rule.next_hop.has_value()){
-          addr = matching_routing_rule.next_hop.value();
+
+      for ( int i = 0; i < 32; ++i ) {
+        uint8_t bit = ( dst_ip >> ( 31 - i ) ) & 1;
+        if ( !current->children[bit] ) {
+          break; // No path continues
         }
-        target_iface->send_datagram(dgram, addr);
+        current = current->children[bit].get();
+        if ( current->route_entry.has_value() ) {
+          best_match = &current->route_entry.value();
+        }
+      }
+
+      // check matching result, send if matched
+      if ( best_match ) {
+        shared_ptr<NetworkInterface> target_iface = interface( best_match->interface_num );
+        Address addr = Address::from_ipv4_numeric( dst_ip );
+        // if next has not value, this router is the last router
+        if ( best_match->next_hop.has_value() ) {
+          addr = best_match->next_hop.value();
+        }
+        target_iface->send_datagram( dgram, addr );
       }
     }
   }

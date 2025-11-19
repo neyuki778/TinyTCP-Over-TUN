@@ -9,10 +9,10 @@
 
 ## 2. 传输层补全：实现拥塞控制 (重要)
 
-- [ ] 目前的 tcp_sender.cc 主要处理了超时重传和流量控制（依据 window_size）。
-- [ ] 拓展目标：实现 TCP Reno 或 TCP Cubic（简化版）。
-- [ ] 具体做法：在 TCPSender 类中增加 cwnd (拥塞窗口) 和 ssthresh (慢启动阈值) 状态变量。
-- [ ] 实现状态机：Slow Start (慢启动) -> Congestion Avoidance (拥塞避免) -> Fast Retransmit/Recovery (快重传/快恢复)。
+- [x] 目前的 tcp_sender.cc 主要处理了超时重传和流量控制（依据 window_size）。
+- [x] 拓展目标：实现 TCP Reno 或 TCP Cubic（简化版）。
+- [x] 具体做法：在 TCPSender 类中增加 cwnd (拥塞窗口) 和 ssthresh (慢启动阈值) 状态变量。
+- [x] 实现状态机：Slow Start (慢启动) -> Congestion Avoidance (拥塞避免) -> Fast Retransmit/Recovery (快重传/快恢复)。
 
 ## 3. 架构拓展：零拷贝思想的引入 (高难度, 待选)
 - [ ] 目前的 `ByteStream `和 `Reassembler` 大量使用了 `std::string 的 append` 和 `substr`，这会产生大量的内存拷贝。

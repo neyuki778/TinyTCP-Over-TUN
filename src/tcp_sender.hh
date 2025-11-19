@@ -3,6 +3,8 @@
 #include "byte_stream.hh"
 #include "tcp_receiver_message.hh"
 #include "tcp_sender_message.hh"
+#include "tcp_config.hh"
+#include "wrapping_integers.hh"
 
 #include <functional>
 #include<deque>
@@ -16,7 +18,8 @@ public:
     : input_( std::move( input ) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms ),
       syn_sent_( false ), fin_sent_( false ), ackno_( 0 ), next_seqno_( 0 ), 
       window_size_( 1 ), outstanding_seqno_(),
-      time_elapsed_( 0 ), current_RTO_ms_( initial_RTO_ms ), consecutive_retransmissions_( 0 ), is_timer_runnning_( false )
+      time_elapsed_( 0 ), current_RTO_ms_( initial_RTO_ms ), consecutive_retransmissions_( 0 ), is_timer_runnning_( false ),
+      cwnd_( TCPConfig::DEFAULT_CAPACITY ), ssthresh_( UINT64_MAX ), consecutive_duplicate_acks_( 0 ), fast_retransmit_pending_( false )
   {}
 
   /* Generate an empty TCPSenderMessage */
@@ -66,4 +69,10 @@ private:
   uint64_t current_RTO_ms_;
   uint64_t consecutive_retransmissions_;
   bool is_timer_runnning_;
+
+  // Congestion Control
+  uint64_t cwnd_;
+  uint64_t ssthresh_;
+  uint64_t consecutive_duplicate_acks_;
+  bool fast_retransmit_pending_;
 };

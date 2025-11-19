@@ -69,6 +69,8 @@ add_test_exec(send_extra)
 
 add_test_exec(net_interface)
 
+add_test_exec(congestion_control)
+
 add_test_exec(router)
 
 add_test_exec(no_skip)

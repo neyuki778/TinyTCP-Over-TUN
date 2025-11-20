@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TinyTCP-Over-TUN 项目概览</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111a2f;
+      --text: #e5e9f0;
+      --muted: #9fb3c8;
+      --accent: #2dd4bf;
+      --accent-2: #f59e0b;
+      --border: rgba(255, 255, 255, 0.08);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 15% 20%, rgba(45, 212, 191, 0.08), transparent 30%),
+                  radial-gradient(circle at 80% 0%, rgba(245, 158, 11, 0.07), transparent 25%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      padding: 72px 18px 54px;
+      text-align: center;
+    }
+    .hero {
+      max-width: 960px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.12), rgba(17, 26, 47, 0.95));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: calc(var(--radius) + 6px);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: -30% auto auto -10%;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(45, 212, 191, 0.2), transparent 60%);
+      filter: blur(12px);
+      z-index: 0;
+    }
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 40px);
+      letter-spacing: -0.5px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      position: relative;
+      z-index: 1;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(17, 26, 47, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      color: var(--muted);
+      font-size: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    main { padding: 0 18px 72px; }
+    .grid {
+      display: grid;
+      gap: 16px;
+      max-width: 1100px;
+      margin: 28px auto 0;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .card p { margin: 0; color: var(--muted); }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #0f172a;
+      background: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .list {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0;
+      color: var(--muted);
+    }
+    .list li { margin: 6px 0; }
+    code, pre {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--text);
+      display: block;
+      overflow: auto;
+      margin: 12px 0 0;
+      line-height: 1.5;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.2);
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+      margin: 32px auto 0;
+    }
+    .callout {
+      border-left: 4px solid var(--accent-2);
+      padding-left: 12px;
+      color: var(--muted);
+    }
+    .timeline {
+      border-left: 2px dashed var(--border);
+      padding-left: 14px;
+    }
+    .timeline .item { margin-bottom: 12px; }
+    .timeline .item strong { color: var(--text); }
+    @media (max-width: 640px) {
+      header { padding-top: 48px; }
+      .hero { padding: 24px; }
+      .card { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <span class="tag">用户态 TCP/IP · TUN · C++17</span>
+      <h1>TinyTCP-Over-TUN</h1>
+      <p>基于 Linux TUN 设备的用户态 TCP/IP 栈，实现 ARP/IP 路由、TCP Reno、重组器优化与 HTTP Demo。</p>
+      <div class="callout" style="margin-top:12px;">内置 web_server 现已支持多次刷新：每个请求都会创建独立的 Minnow TCP 套接字。</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card">
+        <div class="pill">核心亮点</div>
+        <ul class="list">
+          <li>用户态替代：拦截 TUN 数据报，重实现 TCP 三次握手/四次挥手。</li>
+          <li>TCP Reno：Slow Start、CA、Fast Retransmit/Recovery。</li>
+          <li>性能：环形缓冲重组器 + 二叉前缀树路由，Benchmark 提升显著。</li>
+          <li>HTTP Demo：web_server 每请求新建连接，多次刷新稳定返回。</li>
+          <li>一键环境：env_manage.sh 启停 TUN + DNAT，VPS 快速暴露服务。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>快速启动 (Docker)</h3>
+        <p>进入开发容器并构建：</p>
+        <pre>docker-compose run --rm dev /bin/bash
+cmake -S . -B build
+cmake --build build -j</pre>
+        <p style="margin-top:10px;">测试套件：</p>
+        <pre>cmake --build build --target check6
+cmake --build build --target speed</pre>
+      </div>
+      <div class="card">
+        <h3>VPS 一键运行 web_server</h3>
+        <p>env_manage.sh 封装 TUN 与 DNAT，写好 ETH_DEV/PORT 后：</p>
+        <pre>sudo ./env_manage.sh start
+./build/apps/web_server -l 169.254.144.9 8080
+# 浏览器访问 http://&lt;公网IP&gt;:8080，刷新多次
+sudo ./env_manage.sh stop</pre>
+      </div>
+      <div class="card">
+        <h3>HTTP 客户端示例</h3>
+        <p>webget 通过用户态 TCP 访问外部站点：</p>
+        <pre>sudo ./scripts/tun.sh start 144
+./build/apps/webget stanford.edu /class/cs144/</pre>
+        <p class="callout" style="margin-top:8px;">配合 tcpdump -i tun144 可观察用户态包收发。</p>
+      </div>
+    </section>
+
+    <section class="two-col">
+      <div class="card">
+        <h3>架构速览</h3>
+        <div class="timeline">
+          <div class="item"><strong>链路层</strong> · Ethernet/ARP 处理，TUN 设备注入/读取。</div>
+          <div class="item"><strong>网络层</strong> · IPv4 路由，二叉前缀树 LPM，加工校验和/TTL。</div>
+          <div class="item"><strong>传输层</strong> · TCP 状态机、重传定时器、拥塞控制。</div>
+          <div class="item"><strong>会话</strong> · TCPMinnowSocket 双线程（事件循环 + 前台 API）。</div>
+          <div class="item"><strong>应用</strong> · webget、web_server Demo。</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>关键特性</h3>
+        <ul class="list">
+          <li>环形缓冲区重组乱序数据，消除头部 erase 的 O(N) 开销。</li>
+          <li>超时重传 & 自适应 RTT 估计，支持部分 ACK 处理。</li>
+          <li>单连接 Minnow 套接字：web_server 为每个请求创建全新实例。</li>
+          <li>iptables DNAT 一键转发：外网 {ETH_DEV}:{PORT} → 内部 169.254.TUN.9。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

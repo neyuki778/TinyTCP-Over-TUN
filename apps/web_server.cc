@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <span>
@@ -149,6 +150,17 @@ int main( int argc, char** argv )
       abort(); // For sticklers: don't try to access argv[0] if argc <= 0.
     }
 
+    // Prepare response body once (send project overview HTML if available).
+    const std::string html_path = "docs/project_overview.html";
+    std::string response_body;
+    if ( std::ifstream file { html_path, std::ios::binary }; file ) {
+      response_body.assign( std::istreambuf_iterator<char>( file ), {} );
+    } else {
+      response_body
+        = "<html><body><h1>Hello from TinyTCP!</h1><p>This is a simple web server running on a user-space TCP "
+          "stack.</p></body></html>";
+    }
+
     auto args = span( argv, argc );
 
     if ( argc < 3 ) {
@@ -190,7 +202,6 @@ int main( int argc, char** argv )
       std::cout << "Received request:\n" << request << "\n";
 
       // Send the response
-      const std::string response_body = "<html><body><h1>Hello from TinyTCP!</h1><p>This is a simple web server running on a user-space TCP stack.</p></body></html>";
       const std::string response = "HTTP/1.1 200 OK\r\n"
                                    "Content-Type: text/html\r\n"
                                    "Content-Length: " + std::to_string( response_body.size() ) + "\r\n"

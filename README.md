@@ -96,7 +96,7 @@ cmake --build build --target check6
 cmake --build build --target speed
 ```
 
-### 运行内置 web_server（支持多次刷新）
+### 运行内置 web_server
 用户态 HTTP Demo，服务端为每个请求创建独立的 Minnow TCP 套接字。推荐用一键脚本管理 TUN 与端口映射：
 ```bash
 sudo ./env_manage.sh start   # 启动 tun144 + DNAT (先按需修改脚本中的 ETH_DEV/PORT)
@@ -142,6 +142,7 @@ sudo tcpdump -i tun144 -n
 ├── benchmark/              # 性能测试记录
 ├── scripts/                # 工具脚本
 │
+├── env_manage.sh          # demo启动脚本
 ├── CMakeLists.txt          # CMake 构建配置
 ├── Dockerfile              # Docker 镜像配置
 ├── docker-compose.yml      # Docker Compose 配置
@@ -154,6 +155,6 @@ sudo tcpdump -i tun144 -n
 - ✅ 重构 Reassembler 模块,设计环形缓冲区优化乱序处理(性能提升 3 倍)
 - ✅ 重构 Router 模块,采用 Trie 树替换线性查找(性能提升 12 倍)
 - ✅ 完善 Benchmark 测试套件,量化优化效果
-
+- ✅ 新增应用层demo验证tcp在服务端表现
 ## 📝 致谢
 [Stanford CS144](https://cs144.stanford.edu)

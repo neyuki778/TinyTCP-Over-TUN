@@ -164,8 +164,8 @@ int main( int argc, char** argv )
       TCPConfig c_fsm = c_fsm_base;
       c_fsm.isn = Wrap32 { random_device()() };
 
-      LossyTCPOverIPv4MinnowSocket tcp_socket( LossyFdAdapter<TCPOverIPv4OverTunFdAdapter>(
-        TCPOverIPv4OverTunFdAdapter( TunFD( tun_name ) ) ) );
+      LossyTCPOverIPv4MinnowSocket tcp_socket {
+        LossyFdAdapter<TCPOverIPv4OverTunFdAdapter> { TCPOverIPv4OverTunFdAdapter { TunFD { tun_name } } } };
 
       if ( listen ) {
         tcp_socket.listen_and_accept( c_fsm, c_filt );

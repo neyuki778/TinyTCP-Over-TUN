@@ -93,11 +93,11 @@ cmake --build build --target check6
 # 运行性能测试
 cmake --build build --target speed
 ```
-### 建立虚拟网络接口并检验
+### 建立虚拟网络接口并检验 (不推荐使用Docker镜像, 请在虚拟机或vps上运行)
 使用提供的脚本创建虚拟网络设备，使 TCP 栈能绕过内核：
 ```bash
 ## 启动我们的TCP替换内核的TCP
-./scripts/tun.sh start 144
+sudo ./scripts/tun.sh start 144
 ## 在另一个终端运行抓包, 检测我们的TCP是否通过TUN在正常工作
 sudo tcpdump -i tun144 -n
 ## 回到之前的终端, 启动已经写好的webget程序(参数可选, 以stanford.edu/class/cs144/为例)

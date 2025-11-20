@@ -1,8 +1,8 @@
 # TinyTCP-Over-TUN: 高性能用户态 TCP/IP 协议栈
 
-![C++20](https://img.shields.io/badge/C++-20-blue.svg) ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
+![C++17](https://img.shields.io/badge/C++-17-blue.svg) ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 
-TinyTCP-Over-TUN 是一个基于 **C++20** 从零构建的**高性能用户态 TCP/IP 协议栈**。
+TinyTCP-Over-TUN 是一个基于 **C++17** 从零构建的**高性能用户态 TCP/IP 协议栈**。
 
 本项目通过 Linux TUN/TAP 设备**接管操作系统网络流量**，绕过内核 TCP 协议栈，在用户空间完整实现了包括 ARP、IP 路由、TCP 状态机及拥塞控制在内的核心协议。旨在探索高性能网络编程、协议栈内部机制及拥塞控制算法。
 
@@ -18,8 +18,11 @@ TinyTCP-Over-TUN 是一个基于 **C++20** 从零构建的**高性能用户态 T
 
 ## 🛠️ 技术架构
 
+### 0. 架构图
+![架构图](docs/架构图.drawio.png)
+
 ### 1. 传输层
-* **有限状态机**：严格遵循 RFC 9293 标准，管理 TCP 连接生命周期（LISTEN, SYN_SENT, ESTABLISHED 等）。
+* **有限状态机**：遵循 RFC 9293 标准，管理 TCP 连接生命周期（LISTEN, SYN_SENT, ESTABLISHED 等）。
 * **可靠传输机制**：
     * 基于**滑动窗口** 的流量控制。
     * 实现了**累计确认** 与**超时重传 (RTO)** 机制，支持自适应 RTT 估算。
@@ -122,11 +125,12 @@ ping -D -n -i 0.2 162.105.253.58 | tee data.txt
 └── README.md               # 项目说明
 ```
 
+## 🎓 项目背景与创新点
+本项目基于 Stanford CS144 Lab 框架,**在此基础上进行了以下拓展**:
+- ✅ 独立实现 TCP Reno 拥塞控制算法(原框架未包含)
+- ✅ 重构 Reassembler 模块,设计环形缓冲区优化乱序处理(性能提升 3 倍)
+- ✅ 重构 Router 模块,采用 Trie 树替换线性查找(性能提升 12 倍)
+- ✅ 完善 Benchmark 测试套件,量化优化效果
+
 ## 📝 致谢
-本项目基于 [Stanford CS144](https://cs144.stanford.edu) 课程实验进行拓展开发。在此基础上独立完成了拥塞控制算法的实现及核心模块的性能重构。
-
-## 🤝 贡献
-请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解如何贡献代码。
-
-## 📄 许可证
-本项目采用 Apache 2.0 许可证，详见 [LICENSE](LICENSE) 文件。
+[Stanford CS144](https://cs144.stanford.edu)

@@ -105,7 +105,7 @@ sudo ./env_manage.sh start   # 启动 tun144 + DNAT (先按需修改脚本中的
 # 结束后清理
 sudo ./env_manage.sh stop
 ```
-目前可以访问 http://139.59.123.118:8080/ 查看效果
+
 ### 效果
 ![alt text](docs/client.png)
 ![web](docs/web.png)

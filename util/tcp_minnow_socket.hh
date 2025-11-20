@@ -135,3 +135,5 @@ public:
     TCPOverIPv4MinnowSocket::connect( tcp_config, multiplexer_config );
   }
 };
+
+using MyTcpSocket = CS144TCPSocket;

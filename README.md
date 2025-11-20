@@ -14,6 +14,8 @@ TinyTCP-Over-TUN 是一个基于 **C++17** 构建的**用户态 TCP/IP 协议栈
 * **高效性能优化**：
     * **重组器**：设计**环形缓冲区** 配合区间树结构处理乱序数据，消除了 `std::vector` 头部擦除的 $O(N)$ 开销。在重度乱序/重叠场景下，测试处理延迟从 **1.71s 降至 0.05s**，吞吐量提升 **300%**。
     * **路由器 (Router)**：基于 **二叉前缀树** 实现了最长前缀匹配 (**LPM**) 查找，将路由转发效率提升了 **12倍** (从 41k pps 提升至 518k pps)。
+* **内置 HTTP Demo**：`apps/web_server` 每个请求创建干净的 Minnow TCP 套接字，能在服务端响应用户请求。
+* **一键环境管理**：`env_manage.sh` 封装 TUN 设备启动与 iptables DNAT，便于在 VPS 上快速暴露 web_server。
 
 ---
 
@@ -93,6 +95,21 @@ cmake --build build --target check6
 # 运行性能测试
 cmake --build build --target speed
 ```
+
+### 运行内置 web_server（支持多次刷新）
+用户态 HTTP Demo，服务端为每个请求创建独立的 Minnow TCP 套接字。推荐用一键脚本管理 TUN 与端口映射：
+```bash
+sudo ./env_manage.sh start   # 启动 tun144 + DNAT (先按需修改脚本中的 ETH_DEV/PORT)
+./build/apps/web_server -l 169.254.144.9 8080
+# 浏览器访问 http://<你的公网IP>:8080，多次刷新仍能正常返回页面
+# 结束后清理
+sudo ./env_manage.sh stop
+```
+目前可以访问 http://139.59.123.118:8080/ 查看效果
+### 效果
+![alt text](docs/client.png)
+![web](docs/web.png)
+
 ### 建立虚拟网络接口并检验 (不推荐使用Docker镜像, 请在虚拟机或vps上运行)
 使用提供的脚本创建虚拟网络设备，使 TCP 栈能绕过内核：
 ```bash
@@ -103,7 +120,7 @@ sudo tcpdump -i tun144 -n
 ## 回到之前的终端, 启动已经写好的webget程序(参数可选, 以stanford.edu/class/cs144/为例)
 ./build/apps/webget stanford.edu /class/cs144/
 ```
-### 结果:
+### 效果:
 ![webget](docs/webget.png)
 ![抓包](docs/抓包.png)
 该示例展示了用户态 TCP 协议栈与 Linux 内核的完整交互。通过 TUN 虚拟设备，Minnow 成功与真实互联网主机（如 cs144.keithw.org）建立了 TCP 连接并完成了 HTTP 请求。

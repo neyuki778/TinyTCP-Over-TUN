@@ -156,11 +156,17 @@ int main( int argc, char** argv )
       return EXIT_FAILURE;
     }
 
-    auto [c_fsm, c_filt, listen, tun_dev_name] = get_config( args );
-    LossyTCPOverIPv4MinnowSocket tcp_socket( LossyFdAdapter<TCPOverIPv4OverTunFdAdapter>(
-      TCPOverIPv4OverTunFdAdapter( TunFD( tun_dev_name == nullptr ? TUN_DFLT : tun_dev_name ) ) ) );
+    auto [c_fsm_base, c_filt, listen, tun_dev_name] = get_config( args );
+    const char* tun_name = tun_dev_name == nullptr ? TUN_DFLT : tun_dev_name;
 
+    // TCPMinnowSocket is single-connection; create a fresh socket for each request.
     while ( true ) {
+      TCPConfig c_fsm = c_fsm_base;
+      c_fsm.isn = Wrap32 { random_device()() };
+
+      LossyTCPOverIPv4MinnowSocket tcp_socket( LossyFdAdapter<TCPOverIPv4OverTunFdAdapter>(
+        TCPOverIPv4OverTunFdAdapter( TunFD( tun_name ) ) ) );
+
       if ( listen ) {
         tcp_socket.listen_and_accept( c_fsm, c_filt );
       } else {
@@ -180,7 +186,7 @@ int main( int argc, char** argv )
           break;
         }
       }
-      
+
       std::cout << "Received request:\n" << request << "\n";
 
       // Send the response
@@ -194,7 +200,7 @@ int main( int argc, char** argv )
 
       tcp_socket.write( response );
       tcp_socket.wait_until_closed();
-      
+
       if ( !listen ) {
         break;
       }

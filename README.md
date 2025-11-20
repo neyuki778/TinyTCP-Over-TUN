@@ -2,9 +2,9 @@
 
 ![C++17](https://img.shields.io/badge/C++-17-blue.svg) ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 
-TinyTCP-Over-TUN 是一个基于 **C++17** 从零构建的**高性能用户态 TCP/IP 协议栈**。
+TinyTCP-Over-TUN 是一个基于 **C++17** 构建的**用户态 TCP/IP 协议栈**。
 
-本项目通过 Linux TUN/TAP 设备**接管操作系统网络流量**，绕过内核 TCP 协议栈，在用户空间完整实现了包括 ARP、IP 路由、TCP 状态机及拥塞控制在内的核心协议。旨在探索高性能网络编程、协议栈内部机制及拥塞控制算法。
+本项目通过 Linux TUN/TAP 设备**接管操作系统网络流量**，绕过内核 TCP 协议栈，在用户空间完整实现了包括 ARP、IP 路由、TCP 状态机及拥塞控制在内的核心协议。旨在探索网络编程、协议栈内部机制及拥塞控制算法。
 
 ## ✨ 核心亮点
 
@@ -92,15 +92,19 @@ cmake --build build --target check6
 # 运行性能测试
 cmake --build build --target speed
 ```
-### 建立虚拟网络接口 (TUN)
+### 建立虚拟网络接口并检验
 使用提供的脚本创建虚拟网络设备，使 TCP 栈能绕过内核：
-
-```Bash
+```bash
 ## 启动我们的TCP替换内核的TCP
 ./scripts/tun.sh start 144
-## ping北京大学的计算机中心并收集tcp的数据
-ping -D -n -i 0.2 162.105.253.58 | tee data.txt 
+## 在另一个终端运行抓包, 检测我们的TCP是否通过TUN在正常工作
+sudo tcpdump -i tun144 -n
+## 回到之前的终端, 启动已经写好的webget程序(参数可选, 以stanford.edu/class/cs144/为例)
+./build/apps/webget stanford.edu /class/cs144/
 ```
+结果:
+![webget](docs/webget.png)
+![抓包](docs/抓包.png)
 
 ## 📂 项目结构
 ```

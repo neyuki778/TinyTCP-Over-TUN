@@ -21,7 +21,7 @@
 #include <errno.h>
 
 #define PORT 8888
-#define BUFFER_SIZE 16
+#define BUFFER_SIZE 1024
 #define MAX_EVENTS 64
 
 // 工具函数：设置非阻塞

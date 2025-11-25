@@ -8,8 +8,6 @@
 #include <iostream>
 #include <string>
 
-#define BACKLOG 5
-
 class BlockingEchoServer : public BaseEchoServer {
 public:
     void acceptAndHandle() override {

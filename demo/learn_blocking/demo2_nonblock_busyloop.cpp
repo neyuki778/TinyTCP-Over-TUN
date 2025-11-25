@@ -5,8 +5,11 @@
  */
 
 #include "base_server.h"
+#include <cerrno>
+#include <csignal>
 #include <fcntl.h>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 class NonBlockingBusyLoopServer : public BaseEchoServer {
@@ -14,61 +17,69 @@ public:
     NonBlockingBusyLoopServer() = default;
 
     void acceptAndHandle() override {
+        if (setNonBlocking(listen_fd_) == -1) {
+            throw std::runtime_error("setNonBlocking listen_fd failed");
+        }
+        std::signal(SIGPIPE, SIG_IGN);
+
         sockaddr_in client_addr{};
         socklen_t client_len = sizeof(client_addr);
 
         std::cout << "Demo2: non-blocking + busy-loop echo" << std::endl;
         std::cout << "提示：循环里没有 select/poll，观察 CPU 占用。" << std::endl;
 
-        // Busy-loop accept and handle
+        // Busy-loop: 尝试接受连接，同时轮询已存在连接
         while (true) {
+            client_len = sizeof(client_addr);
             int conn_fd = accept(listen_fd_, reinterpret_cast<sockaddr*>(&client_addr), &client_len);
-            Socket conn_socket(std::move(conn_fd));
-            if (conn_socket.get() < 0) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    // 没有新连接，继续循环
-                    continue;
-                }
-                std::cerr << "accept failed" << std::endl;
-                continue;
-            }
-
-            if (setNonBlocking(conn_socket.get()) == -1) {
-                std::cerr << "setNonBlocking failed" << std::endl;
-                close(conn_socket.get());
-                continue;
-            }
-
-            client_fds_.emplace_back(conn_fd);
-
-        }
-
-        // Handle all client connections in a busy loop
-        for (auto it : client_fds_) {
-            while (true) {
-                ssize_t n = read(it, buffer_.data(), sizeof(buffer_));
-                if (n < 0) {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                        // 没有数据可读，继续循环
-                        break;
-                    }
-                    std::cerr << "read error on fd " << it << std::endl;
-                    close(it);
-                    break;
-                } else if (n == 0) {
-                    // 客户端关闭连接
-                    close(it);
-                    break;
+            if (conn_fd >= 0) {
+                if (setNonBlocking(conn_fd) == -1) {
+                    std::cerr << "setNonBlocking failed\n";
+                    close(conn_fd);
                 } else {
-                    // 回显数据
-                    write(it, buffer_.data(), n);
+                    client_socks_.push_back(Socket(conn_fd));
                 }
+            } else if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+                std::cerr << "accept failed\n";
+            }
+
+            for (auto it = client_socks_.begin(); it != client_socks_.end();) {
+                int fd = it->get();
+                ssize_t n = read(fd, buffer_.data(), buffer_.size());
+                if (n > 0) {
+                    ssize_t sent = 0;
+                    while (sent < n) {
+                        ssize_t m = write(fd, buffer_.data() + sent, n - sent);
+                        if (m > 0) {
+                            sent += m;
+                        } else if (m == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                            break;  // 发送缓冲区满，放弃剩余部分
+                        } else {
+                            std::cerr << "write error on fd " << fd << std::endl;
+                            close(fd);
+                            it = client_socks_.erase(it);
+                            goto next_client;
+                        }
+                    }
+                    ++it;
+                } else if (n == 0) {
+                    close(fd);
+                    it = client_socks_.erase(it);
+                } else if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                    ++it;
+                } else {
+                    std::cerr << "read error on fd " << fd << std::endl;
+                    close(fd);
+                    it = client_socks_.erase(it);
+                }
+            next_client:
+                continue;
             }
         }
     }
 
 private:
-    static int setNonBlocking(int fd){
+    static int setNonBlocking(int fd) {
         int flags = fcntl(fd, F_GETFL, 0);
         if (flags == -1) {
             return -1;
@@ -79,7 +90,7 @@ private:
         return 0;
     }
 
-    std::vector<int> client_fds_;
+    std::vector<Socket> client_socks_;
 };
 
 int main() {

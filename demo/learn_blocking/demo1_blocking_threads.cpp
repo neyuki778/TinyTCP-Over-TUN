@@ -10,8 +10,6 @@
 #include <mutex>
 #include <thread>
 
-#define BACKLOG 16
-
 class ThreadPerConnectionServer : public BaseEchoServer {
 public:
     ThreadPerConnectionServer() : active_threads_(0) {}

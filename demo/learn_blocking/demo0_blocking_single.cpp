@@ -14,6 +14,19 @@
 #define PORT 8888
 #define BUFFER_SIZE 1024
 
+class Socket {
+public:
+    explicit Socket(int fd) : fd_(fd) {}
+    ~Socket() {
+        if (fd_ >= 0) {
+            close(fd_);
+        }
+    }
+    int get() const { return fd_; }
+private:
+    int fd_;
+};
+
 class BlockingEchoServer {
 public:
     BlockingEchoServer() : listen_fd_(-1), buffer_{} {}
@@ -72,19 +85,22 @@ private:
                 continue;
             }
 
+            // 用Socket类自动管理conn_fd，离开作用域时自动close
+            Socket conn_socket(conn_fd);
+
             std::cout << "Client " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << " connected" << std::endl;
 
             // IO多路复用知识点：read() 是阻塞的。
             while (true) {
-                ssize_t n = read(conn_fd, buffer_.data(), buffer_.size());
+                ssize_t n = read(conn_socket.get(), buffer_.data(), buffer_.size());
                 if (n <= 0) {
                     break;
                 }
-                write(conn_fd, buffer_.data(), n);
+                write(conn_socket.get(), buffer_.data(), n);
             }
 
             std::cout << "Client disconnected" << std::endl;
-            close(conn_fd);
+            // 无需手动close，conn_socket析构时自动处理
         }
     }
 

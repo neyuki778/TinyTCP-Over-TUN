@@ -34,6 +34,7 @@ private:
     CallbackT callback;
     bool cancel_requested {};
 
+    // interest() 返回 true 表示本轮仍想被调度；callback() 负责实际处理
     BasicRule( size_t s_category_id, InterestT s_interest, CallbackT s_callback );
   };
 

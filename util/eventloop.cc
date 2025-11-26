@@ -92,6 +92,7 @@ EventLoop::Result EventLoop::wait_next_event( const int timeout_ms )
         continue;
       }
 
+      // interest() 可能连续返回 true，此处限制最多触发 128 次，避免逻辑错误导致忙等
       uint8_t iterations = 0;
       while ( this_rule.interest() ) {
         if ( iterations++ >= 128 ) {
@@ -148,6 +149,7 @@ EventLoop::Result EventLoop::wait_next_event( const int timeout_ms )
                            0 } );
       something_to_poll = true;
     } else {
+      // 即便暂时不关心可读/可写，也放入 poll 以捕获 POLLERR/POLLNVAL 等错误
       pollfds.push_back( { this_rule.fd.fd_num(), 0, 0 } ); // placeholder --- we still want errors
     }
     ++it;
@@ -155,6 +157,7 @@ EventLoop::Result EventLoop::wait_next_event( const int timeout_ms )
 
   // quit if there is nothing left to poll
   if ( not something_to_poll ) {
+    // 所有规则都取消或暂时不再感兴趣，事件循环可以退出
     return Result::Exit;
   }
 
@@ -168,6 +171,7 @@ EventLoop::Result EventLoop::wait_next_event( const int timeout_ms )
     const auto& this_pollfd = pollfds.at( idx );
     auto& this_rule = **it;
 
+    // poll 返回错误时尝试用 getsockopt(SO_ERROR) 给出更明确的原因
     const auto poll_error = static_cast<bool>( this_pollfd.revents & ( POLLERR | POLLNVAL ) );
     if ( poll_error ) {
       /* see if fd is a socket */
@@ -209,6 +213,7 @@ EventLoop::Result EventLoop::wait_next_event( const int timeout_ms )
       const auto count_before = this_rule.service_count();
       this_rule.callback();
 
+      // callback 后如果读写次数没变且仍感兴趣，说明没消费事件，视为忙等错误
       if ( count_before == this_rule.service_count() and ( not this_rule.fd.closed() ) and this_rule.interest() ) {
         throw runtime_error( "EventLoop: busy wait detected: rule \""
                              + _rule_categories.at( this_rule.category_id ).name

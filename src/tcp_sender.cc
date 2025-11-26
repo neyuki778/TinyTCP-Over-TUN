@@ -159,12 +159,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
             // Some tests send window updates with same ackno, which are not dup ACKs for fast retransmit
             // But standard says: same ackno, same window, same length -> dup ack.
             // Here we simplify: if ackno is same and we have outstanding data.
-            
-            // However, we must be careful not to trigger fast retransmit on window updates.
-            // A window update (same ackno, new window) is NOT a duplicate ACK for congestion control purposes usually.
-            // But for simplicity, let's assume if window size didn't change?
-            // The test cases might be tricky.
-            
+
             // Let's stick to basic: same ackno -> dup ack.
             consecutive_duplicate_acks_++;
             if (consecutive_duplicate_acks_ == 3) {
